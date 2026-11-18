@@ -1,6 +1,6 @@
 # Third-party notices
 
-This app bundles the EmulatorJS runtime and selected core packages, version 4.2.3. The runtime license is included as `EMULATORJS-LICENSE`. Package metadata and README files are preserved under `cores/licenses/`; core reports are under `cores/reports`.
+This app bundles the EmulatorJS runtime and selected core packages, version 4.2.3. The runtime license is included as `EMULATORJS-LICENSE`. Package metadata and README files are preserved under `cores/licenses/`; core reports are under `cores/reports`. The additional packages bundled in 3.0.0 are pinned and checksummed in `cores/core-packages-lock.json`.
 
 ## Bundled core packages
 
@@ -37,6 +37,17 @@ This app bundles the EmulatorJS runtime and selected core packages, version 4.2.
 - **vice_xvic** — COPYING; https://github.com/EmulatorJS/vice-libretro.git
 - **virtualjaguar** — ; https://github.com/EmulatorJS/virtualjaguar-libretro.git
 - **yabause** — ; https://github.com/EmulatorJS/yabause.git
+- **81** — Atari 8-bit core; https://github.com/EmulatorJS/81-libretro.git
+- **cap32** — Amstrad CPC core; https://github.com/EmulatorJS/libretro-cap32.git
+- **desmume** — alternate Nintendo DS core; https://github.com/EmulatorJS/desmume.git
+- **fbalpha2012_cps1** — alternate CPS-1 arcade core; https://github.com/EmulatorJS/fbalpha2012_cps1.git
+- **fbalpha2012_cps2** — alternate CPS-2 arcade core; https://github.com/EmulatorJS/fbalpha2012_cps2.git
+- **fuse** — Sinclair ZX Spectrum core; https://github.com/EmulatorJS/fuse-libretro.git
+- **mame2003_plus** — alternate arcade core; https://github.com/EmulatorJS/mame2003-plus-libretro.git
+- **mednafen_psx_hw** — alternate PlayStation core; https://github.com/EmulatorJS/beetle-psx-libretro.git
+- **nestopia** — alternate NES core; https://github.com/EmulatorJS/nestopia.git
+- **parallel_n64** — alternate Nintendo 64 core; https://github.com/EmulatorJS/parallel-n64.git
+- **prboom** — Doom engine core; https://github.com/EmulatorJS/libretro-prboom.git
 
 Flycast WASM attribution and license: `../third_party/flycast-wasm-v1.0/NOTICE.md` and `../third_party/flycast-wasm-v1.0/LICENSE`.
 

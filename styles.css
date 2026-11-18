@@ -187,6 +187,17 @@ h2 span { color: #76798a; }
 .emulator-mount { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; background: #000; }
 .emulator-mount[hidden] { display: none !important; }
 .emulator-frame { width: 100%; height: 100%; border: 0; background: #000; }
+.player-keyboard { position: absolute; z-index: 7; right: 10px; bottom: 10px; left: 10px; width: min(920px,calc(100% - 20px)); max-height: min(54vh,330px); margin: 0 auto; padding: 9px; overflow: auto; border: 1px solid var(--line-bright); border-radius: 10px; background: rgba(15,17,24,.96); box-shadow: 0 12px 45px #000b; backdrop-filter: blur(12px); touch-action: manipulation; }
+.virtual-keyboard-heading { display: flex; align-items: center; gap: 9px; min-height: 24px; margin: 0 0 6px; color: var(--accent); font: 7px var(--mono); letter-spacing: .08em; }
+.virtual-keyboard-heading small { flex: 1; color: var(--muted); font: 7px var(--sans); letter-spacing: 0; }
+.virtual-keyboard-heading button { width: 24px; height: 24px; border: 1px solid var(--line-bright); border-radius: 5px; background: #ffffff08; color: var(--ink); cursor: pointer; font-size: 16px; }
+.virtual-keyboard-rows { display: grid; gap: 4px; }
+.virtual-keyboard-row { display: flex; justify-content: center; gap: 4px; min-width: 0; }
+.virtual-key { display: grid; flex: 1 1 0; place-items: center; min-width: 24px; min-height: 35px; padding: 0 4px; border: 1px solid #ffffff24; border-radius: 5px; background: linear-gradient(#343743,#22242d); color: #f1f2f6; cursor: pointer; font: 10px var(--sans); touch-action: none; user-select: none; -webkit-user-select: none; }
+.virtual-key.is-wide { flex-grow: 1.7; font-size: 8px; }
+.virtual-key.is-space { flex-grow: 4; }
+.virtual-key.is-down { transform: translateY(1px); border-color: var(--accent); background: rgba(var(--accent-rgb),.25); color: var(--accent); }
+.player-view.keyboard-open .player-keyboard { bottom: max(10px,env(safe-area-inset-bottom)); }
 .player-loader { position: relative; z-index: 1; display: grid; justify-items: center; gap: 9px; text-align: center; }
 .loader-ring { width: 29px; height: 29px; margin-bottom: 5px; border: 2px solid #ffffff18; border-top-color: var(--accent); border-radius: 50%; animation: spin .8s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
@@ -303,6 +314,12 @@ html:fullscreen .player-footer, html:-webkit-full-screen .player-footer { flex-b
   .player-game-title strong { max-width: 37vw; font-size: 10px; }
   .player-game-title small { font-size: 6px; }
   .player-action { width: 33px; height: 33px; }
+  .player-keyboard { right: 4px; bottom: 5px; left: 4px; width: calc(100% - 8px); max-height: min(57vh,300px); padding: 7px; }
+  .virtual-key { min-height: 32px; padding: 0 2px; font-size: 9px; }
+  .virtual-keyboard-row { gap: 3px; }
+  .virtual-keyboard-rows { gap: 3px; }
+  .virtual-keyboard-heading { gap: 6px; font-size: 6px; }
+  .virtual-keyboard-heading small { font-size: 6px; }
   .player-footer { flex-basis: 39px; padding: 0 11px; font-size: 6px; }
   .player-brand { font-size: 9px; }
   .player-brand i { font-size: 6px; }

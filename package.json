@@ -1,8 +1,8 @@
 {
   "name": "16bit-mega-drive",
-  "version": "2.2.2",
+  "version": "3.0.0",
   "private": true,
-  "description": "Emulador multi-sistema retr\u00f4 para web e Android",
+  "description": "Emulador multi-sistema retrô para web e Android",
   "scripts": {
     "build": "node scripts/copy-web.mjs",
     "cap:sync": "npm run build && cap sync android",

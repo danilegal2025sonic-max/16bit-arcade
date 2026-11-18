@@ -1,0 +1,17 @@
+{
+  "runtimeVersion": "4.2.3",
+  "description": "New system cores and optional compatibility cores added in 16-Bit Arcade 3.0.0.",
+  "packages": [
+    { "name": "@emulatorjs/core-81", "version": "4.2.3", "tarballSha256": "d6abfec57aea5bb84a39ee0ee12c068df8f55f7feb4897a4bfbb9682aa7ec945", "usedBy": ["Atari 8-bit"] },
+    { "name": "@emulatorjs/core-fuse", "version": "4.2.3", "tarballSha256": "4a6a4eb0271e20ed6dc96ba48672d6aceffd816473b61c85773162f92737a3e0", "usedBy": ["Sinclair ZX Spectrum"] },
+    { "name": "@emulatorjs/core-cap32", "version": "4.2.3", "tarballSha256": "bcfa8bddbb0aaadc38fc27baf94fbf9f15662cb7812bcc1739aa813f662925c2", "usedBy": ["Amstrad CPC"] },
+    { "name": "@emulatorjs/core-prboom", "version": "4.2.3", "tarballSha256": "dce8d0eee5b6da24fd0397993e86694fefcd941cf40a948d1957ae395722fa6e", "usedBy": ["Doom"] },
+    { "name": "@emulatorjs/core-nestopia", "version": "4.2.3", "tarballSha256": "823518f6be429bfc4d879abeea311f2900a4aa8198cb9ddfd7b95005cf102dd8", "usedBy": ["NES alternate core"] },
+    { "name": "@emulatorjs/core-desmume", "version": "4.2.3", "tarballSha256": "d2942e2ed4e3ec28d16899dc35578ba293fac24aba004d2d8fab081627b0a19c", "usedBy": ["Nintendo DS alternate core"] },
+    { "name": "@emulatorjs/core-parallel_n64", "version": "4.2.3", "tarballSha256": "b83cb21ac25b84db646737119083836607f37b0b94833d40669d8d72cca81d5a", "usedBy": ["Nintendo 64 alternate core"] },
+    { "name": "@emulatorjs/core-mednafen_psx_hw", "version": "4.2.3", "tarballSha256": "c4ba294fe00ca8633fc207899e6834ba38f50ac066e86f47d6b918082a252002", "usedBy": ["PlayStation alternate core"] },
+    { "name": "@emulatorjs/core-mame2003_plus", "version": "4.2.3", "tarballSha256": "f0018fcdf04688ac940f9bff24ccbede9fca1c4a9273093a89a66742f6da07bd", "usedBy": ["MAME alternate core"] },
+    { "name": "@emulatorjs/core-fbalpha2012_cps1", "version": "4.2.3", "tarballSha256": "0c4a70d19788d46a6a6bca6f40bc024858ac25bfa17fdbcdc7e10cc201b82f5d", "usedBy": ["Arcade CPS-1 alternate core"] },
+    { "name": "@emulatorjs/core-fbalpha2012_cps2", "version": "4.2.3", "tarballSha256": "ae31b5c2161fbf45a0469edfaa03f2db132b004d2f9910f6ea4aee9c909f9543", "usedBy": ["Arcade CPS-2 alternate core"] }
+  ]
+}

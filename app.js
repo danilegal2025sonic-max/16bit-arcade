@@ -12,6 +12,9 @@ const playerLoader = document.querySelector('#player-loader');
 const playerStatus = document.querySelector('#player-status');
 const playerName = document.querySelector('#player-game-name');
 const mount = document.querySelector('#emulator-mount');
+const virtualKeyboard = document.querySelector('#player-keyboard');
+const virtualKeyboardRows = document.querySelector('#virtual-keyboard-rows');
+const virtualKeyboardToggle = document.querySelector('#player-keyboard-toggle');
 const controlHint = document.querySelector('#control-hint');
 const toast = document.querySelector('#toast');
 const settingsDialog = document.querySelector('#settings-dialog');
@@ -54,18 +57,22 @@ const SYSTEMS = {
   ngp: { name: 'Neo Geo Pocket', core: 'ngp', extensions: ['ngp','ngc','zip'] },
   ws: { name: 'WonderSwan', core: 'ws', extensions: ['ws','wsc','zip'] },
   arcade: { name: 'Arcade (FBNeo)', core: 'arcade', control: 'arcade', extensions: ['zip','7z'] },
-  mame2003: { name: 'Arcade (MAME 2003)', core: 'mame2003', control: 'mame', extensions: ['zip','7z'] },
+  mame2003: { name: 'Arcade (MAME 2003)', core: 'mame', control: 'mame', extensions: ['zip','7z'] },
   jaguar: { name: 'Atari Jaguar', core: 'jaguar', control: 'jaguar', extensions: ['j64','jag','rom','zip'] },
-  dos: { name: 'PC MS-DOS', core: 'dos', threaded: true, extensions: ['zip','7z'] },
-  c64: { name: 'Commodore 64', core: 'c64', extensions: ['d64','t64','tap','crt','prg','p00','zip'] },
-  c128: { name: 'Commodore 128', core: 'c128', extensions: ['d64','d71','d81','tap','crt','prg','zip'] },
-  pet: { name: 'Commodore PET', core: 'pet', extensions: ['prg','p00','crt','zip'] },
-  plus4: { name: 'Commodore Plus/4', core: 'plus4', extensions: ['prg','p00','tap','d64','zip'] },
-  vic20: { name: 'Commodore VIC-20', core: 'vic20', extensions: ['prg','p00','crt','tap','zip'] },
-  amiga: { name: 'Commodore Amiga', core: 'amiga', biosKey: 'amiga', extensions: ['adf','adz','dms','ipf','lha','zip'] },
+  dos: { name: 'PC MS-DOS', core: 'dos', threaded: true, keyboard: true, extensions: ['zip','7z'] },
+  c64: { name: 'Commodore 64', core: 'c64', keyboard: true, extensions: ['d64','t64','tap','crt','prg','p00','zip'] },
+  c128: { name: 'Commodore 128', core: 'c128', keyboard: true, extensions: ['d64','d71','d81','tap','crt','prg','zip'] },
+  pet: { name: 'Commodore PET', core: 'pet', keyboard: true, extensions: ['prg','p00','crt','zip'] },
+  plus4: { name: 'Commodore Plus/4', core: 'plus4', keyboard: true, extensions: ['prg','p00','tap','d64','zip'] },
+  vic20: { name: 'Commodore VIC-20', core: 'vic20', keyboard: true, extensions: ['prg','p00','crt','tap','zip'] },
+  amiga: { name: 'Commodore Amiga', core: 'amiga', keyboard: true, biosKey: 'amiga', extensions: ['adf','adz','dms','ipf','lha','zip'] },
   pcfx: { name: 'NEC PC-FX', core: 'pcfx', biosKey: 'pcfx', extensions: ['cue','chd','iso','zip'] },
+  atari8: { name: 'Atari 8-bit (400/800/XL/XE)', core: '81', keyboard: true, extensions: ['atr','atx','xex','xfd','dcm','cas','rom','zip','7z'] },
+  zxspectrum: { name: 'Sinclair ZX Spectrum', core: 'fuse', keyboard: true, extensions: ['z80','sna','tap','tzx','pzx','dsk','udi','trd','zip','7z'] },
+  amstradcpc: { name: 'Amstrad CPC', core: 'cap32', keyboard: true, extensions: ['dsk','sna','cdt','cpr','voc','zip','7z'] },
+  doom: { name: 'Doom (PrBoom)', core: 'prboom', keyboard: true, extensions: ['wad','zip','7z'] },
 };
-const CURRENT_VERSION = '2.2.2';
+const CURRENT_VERSION = '3.0.0';
 const SYSTEM_KEY = 'sixteenbit-system-v1';
 
 const DB_NAME = 'sixbit-local-library';
@@ -101,14 +108,17 @@ const SYSTEM_GROUPS = {
   Nintendo: ['nes','snes','gb','gbc','gba','nds','n64'],
   PlayStation: ['ps1','ps2','psp','psvita'],
   Atari: ['atari2600','atari5200','atari7800','jaguar','lynx','vb'],
-  Computadores: ['c64','c128','pet','plus4','vic20','amiga','dos'],
+  Computadores: ['c64','c128','pet','plus4','vic20','amiga','dos','atari8','zxspectrum','amstradcpc'],
   Arcade: ['arcade','mame2003'],
+  'PC clássico': ['doom'],
   Outros: ['3do','coleco','pce','ngp','ws','pcfx'],
 };
 const SYSTEM_SUMMARIES = {
   c64:'Computador doméstico · VICE', c128:'Computador doméstico · VICE', pet:'Computador clássico · VICE',
   plus4:'Computador doméstico · VICE', vic20:'Computador doméstico · VICE', amiga:'Computador 16-bit · PUAE · Kickstart',
-  pcfx:'Console NEC · Mednafen', dos:'Jogos clássicos de PC', arcade:'Arcade · FinalBurn Neo', mame2003:'Arcade · MAME 2003',
+  pcfx:'Console NEC · Mednafen', dos:'Jogos clássicos de PC', arcade:'Arcade · FinalBurn Neo', mame2003:'Arcade · MAME 2003 Plus / 2003',
+  atari8:'Computador 8-bit · Atari 400/800', zxspectrum:'Computador doméstico · Fuse',
+  amstradcpc:'Computador doméstico · Caprice32', doom:'FPS clássico · PrBoom · WAD',
 };
 const SYSTEM_DESCRIPTIONS = {
   megadrive:'Console de 16 bits da Sega, conhecido como Genesis na América do Norte. A biblioteca aceita cartuchos em formatos como .md e .gen.',
@@ -142,14 +152,18 @@ const SYSTEM_DESCRIPTIONS = {
   ws:'WonderSwan, portátil da Bandai lançado principalmente no Japão. WonderSwan Color também é compatível com o núcleo.',
   arcade:'Arcade via FinalBurn Neo. Cada jogo normalmente é um pacote próprio e deve corresponder à versão compatível do núcleo.',
   mame2003:'Arcade via MAME 2003. Use pacotes de jogos compatíveis com esta versão do MAME; arquivos de outras versões podem falhar.',
-  dos:'PC MS-DOS pelo DOSBox Pure. Jogos costumam vir em pacotes .zip ou .7z e podem precisar de configuração de teclado.',
-  c64:'Commodore 64, computador doméstico de 8 bits muito popular. O núcleo VICE aceita imagens de disco, fita, cartucho e programas.',
-  c128:'Commodore 128, computador doméstico compatível com o C64 e com modos próprios. O núcleo VICE suporta mídia em vários formatos.',
-  pet:'Commodore PET, uma família de computadores pessoais e educacionais. É indicado para programas e jogos simples de computador.',
-  plus4:'Commodore Plus/4, computador doméstico da família 264. A biblioteca usa programas, fitas e imagens de disco compatíveis.',
-  vic20:'Commodore VIC-20, computador doméstico de 8 bits anterior ao C64. O núcleo VICE suporta programas e mídia do sistema.',
-  amiga:'Commodore Amiga, família de computadores de 16/32 bits conhecida por jogos, música e gráficos. Jogos em disco podem exigir Kickstart.',
+  dos:'PC MS-DOS pelo DOSBox Pure. Jogos costumam vir em pacotes .zip ou .7z e podem precisar do teclado virtual.',
+  c64:'Commodore 64, computador doméstico de 8 bits muito popular. O núcleo VICE aceita imagens de disco, fita, cartucho e programas; use o teclado virtual para digitar.',
+  c128:'Commodore 128, computador doméstico compatível com o C64 e com modos próprios. O núcleo VICE suporta mídia em vários formatos e oferece teclado virtual.',
+  pet:'Commodore PET, uma família de computadores pessoais e educacionais. O teclado virtual ajuda a usar programas e jogos de texto.',
+  plus4:'Commodore Plus/4, computador doméstico da família 264. A biblioteca usa programas, fitas e imagens de disco compatíveis com teclado virtual.',
+  vic20:'Commodore VIC-20, computador doméstico de 8 bits anterior ao C64. O núcleo VICE suporta programas e mídia do sistema; há teclado virtual.',
+  amiga:'Commodore Amiga, família de computadores de 16/32 bits conhecida por jogos, música e gráficos. Jogos em disco podem exigir Kickstart; há teclado virtual.',
   pcfx:'PC-FX, console de CD da NEC lançado no Japão. O núcleo Mednafen pode exigir um arquivo BIOS compatível.',
+  atari8:'Família de computadores Atari 400, 800, XL e XE. Aceita imagens de disco e fita e executáveis desses computadores.',
+  zxspectrum:'Computador doméstico da Sinclair, famoso por jogos em fita. Os jogos podem exigir teclado; use o teclado virtual nesta tela.',
+  amstradcpc:'Computador doméstico da Amstrad, com jogos em fita, disco e cartucho. O teclado virtual ajuda em comandos e jogos de texto.',
+  doom:'Núcleo PrBoom para jogos compatíveis com Doom. O pacote do jogo (WAD) deve ser fornecido por você; nenhum conteúdo comercial acompanha o app.',
 };
 
 function readSettings() {
@@ -175,6 +189,8 @@ let gameRunning = false;
 let dragDepth = 0;
 let chromeTimer = null;
 let startupAudioContext = null;
+let keyboardOpen = false;
+const heldVirtualKeys = new Set();
 const recentAppErrors = [];
 
 function showToast(message) {
@@ -223,6 +239,13 @@ function systemForFile(file, preferred = selectedSystem) {
   if (['j64','jag'].includes(ext)) return 'jaguar';
   if (['z64','n64','v64'].includes(ext)) return 'n64';
   if (['adf','adz','dms','ipf','lha'].includes(ext)) return 'amiga';
+  if (['atr','atx','xex','xfd','dcm','cas'].includes(ext)) return 'atari8';
+  if (ext === 'sna' && SYSTEMS[preferred]?.core === 'cap32') return 'amstradcpc';
+  if (['z80','tzx','pzx','udi','trd'].includes(ext)) return 'zxspectrum';
+  if (['cdt','cpr','voc'].includes(ext)) return 'amstradcpc';
+  if (ext === 'wad') return 'doom';
+  if (ext === 'dsk' && SYSTEMS[preferred]?.core === 'cap32') return 'amstradcpc';
+  if (ext === 'dsk' && SYSTEMS[preferred]?.core === 'fuse') return 'zxspectrum';
   if (['zip','7z'].includes(ext) && SYSTEMS[preferred]) return preferred;
   if (['bin','rom','iso','chd','cue'].includes(ext) && SYSTEMS[preferred]) return preferred;
   if (SYSTEMS[preferred]?.extensions.includes(ext)) return preferred;
@@ -523,6 +546,94 @@ function virtualGamepadSettings() {
   return controls;
 }
 
+const VIRTUAL_KEY_ROWS = [
+  [...'1234567890'].map((key) => [key, key, `Digit${key}`, key === '0' ? 48 : key.charCodeAt(0)]),
+  [...'qwertyuiop'].map((key) => [key, key, `Key${key.toUpperCase()}`, key.toUpperCase().charCodeAt(0)]),
+  [...'asdfghjkl'].map((key) => [key, key, `Key${key.toUpperCase()}`, key.toUpperCase().charCodeAt(0)]),
+  [['SHIFT','Shift','ShiftLeft',16,'wide'], ...[...'zxcvbnm'].map((key) => [key, key, `Key${key.toUpperCase()}`, key.toUpperCase().charCodeAt(0)]), ['⌫','Backspace','Backspace',8,'wide']],
+  [
+    ['CTRL','Control','ControlLeft',17,'wide'], ['ALT','Alt','AltLeft',18,'wide'],
+    ['ESC','Escape','Escape',27,'wide'], ['↑','ArrowUp','ArrowUp',38], ['↓','ArrowDown','ArrowDown',40],
+    ['←','ArrowLeft','ArrowLeft',37], ['→','ArrowRight','ArrowRight',39], ['ESPAÇO',' ','Space',32,'space'],
+    ['ENTER','Enter','Enter',13,'wide'],
+  ],
+];
+
+function renderVirtualKeyboard() {
+  virtualKeyboardRows.replaceChildren(...VIRTUAL_KEY_ROWS.map((row) => {
+    const rowElement = document.createElement('div');
+    rowElement.className = 'virtual-keyboard-row';
+    for (const [label, key, code, keyCode, width = ''] of row) {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = `virtual-key${width ? ` is-${width}` : ''}`;
+      button.textContent = label;
+      button.dataset.key = key;
+      button.dataset.code = code;
+      button.dataset.keyCode = String(keyCode);
+      button.setAttribute('aria-label', label === '⌫' ? 'Backspace' : label);
+      rowElement.append(button);
+    }
+    return rowElement;
+  }));
+}
+
+function dispatchVirtualKey(button, type) {
+  const code = button.dataset.code;
+  if (type === 'keydown') heldVirtualKeys.add(code);
+  else heldVirtualKeys.delete(code);
+  const frameWindow = mount.querySelector('iframe')?.contentWindow;
+  const target = frameWindow?.document;
+  if (!frameWindow || !target) return;
+  const event = new frameWindow.KeyboardEvent(type, {
+    key: button.dataset.key,
+    code,
+    keyCode: Number(button.dataset.keyCode),
+    which: Number(button.dataset.keyCode),
+    bubbles: true,
+    cancelable: true,
+    shiftKey: heldVirtualKeys.has('ShiftLeft') || heldVirtualKeys.has('ShiftRight'),
+    ctrlKey: heldVirtualKeys.has('ControlLeft') || heldVirtualKeys.has('ControlRight'),
+    altKey: heldVirtualKeys.has('AltLeft') || heldVirtualKeys.has('AltRight'),
+  });
+  target.dispatchEvent(event);
+}
+
+function releaseVirtualKey(button) {
+  if (button.dataset.pressed !== 'true') return;
+  button.dataset.pressed = 'false';
+  button.classList.remove('is-down');
+  dispatchVirtualKey(button, 'keyup');
+}
+
+function setVirtualKeyboardOpen(open) {
+  keyboardOpen = Boolean(open && SYSTEMS[selectedSystem]?.keyboard);
+  virtualKeyboard.hidden = !keyboardOpen;
+  playerView.classList.toggle('keyboard-open', keyboardOpen);
+  virtualKeyboardToggle.setAttribute('aria-pressed', String(keyboardOpen));
+  virtualKeyboardToggle.setAttribute('aria-label', keyboardOpen ? 'Fechar teclado virtual' : 'Abrir teclado virtual');
+  if (!keyboardOpen) {
+    for (const button of virtualKeyboardRows.querySelectorAll('[data-pressed="true"]')) releaseVirtualKey(button);
+  } else showPlayerChrome(true);
+}
+
+renderVirtualKeyboard();
+virtualKeyboardRows.addEventListener('pointerdown', (event) => {
+  const button = event.target.closest('.virtual-key');
+  if (!button) return;
+  event.preventDefault();
+  button.setPointerCapture?.(event.pointerId);
+  button.dataset.pressed = 'true';
+  button.classList.add('is-down');
+  dispatchVirtualKey(button, 'keydown');
+});
+for (const type of ['pointerup','pointercancel','lostpointercapture']) {
+  virtualKeyboardRows.addEventListener(type, (event) => {
+    const button = event.target.closest?.('.virtual-key');
+    if (button) releaseVirtualKey(button);
+  });
+}
+
 function openExternalPlayer(url) {
   const nativeBrowser = window.Capacitor?.Plugins?.ExternalBrowser;
   if (nativeBrowser?.open) {
@@ -568,6 +679,7 @@ async function launchGame(file, record = null, soundAlreadyPlayed = false) {
     return;
   }
   selectSystem(systemId);
+  setVirtualKeyboardOpen(false);
   if (!soundAlreadyPlayed) playStartupSound();
   for (const url of currentBiosUrls) URL.revokeObjectURL(url);
   currentBiosUrls = [];
@@ -773,6 +885,7 @@ async function closePlayer() {
     try { await document.exitFullscreen(); } catch { /* Restore the native system bars below regardless. */ }
   }
   await setNativeImmersive(false);
+  setVirtualKeyboardOpen(false);
   playerView.classList.remove('chrome-hidden');
   screen.orientation?.unlock?.();
   gameRunning = false;
@@ -824,7 +937,7 @@ function showPlayerChrome(force = false) {
   playerView.classList.remove('chrome-hidden');
   window.clearTimeout(chromeTimer);
   chromeTimer = window.setTimeout(() => {
-    if (!settingsDialog.open && !document.querySelector('#developer-dialog').open && !document.querySelector('#system-descriptions-dialog').open && playerView.classList.contains('is-immersive')) playerView.classList.add('chrome-hidden');
+    if (!keyboardOpen && !settingsDialog.open && !document.querySelector('#developer-dialog').open && !document.querySelector('#system-descriptions-dialog').open && playerView.classList.contains('is-immersive')) playerView.classList.add('chrome-hidden');
   }, 2600);
 }
 
@@ -873,7 +986,7 @@ function renderSystemDescriptions() {
     if (!cards.length) return '';
     return `<section class="description-group"><h3>${group}</h3><div class="description-cards">${cards.map((id) => {
       const system = SYSTEMS[id];
-      const mode = system.kind === 'external' ? 'Player externo' : `Núcleo integrado · ${system.core}`;
+      const mode = system.kind === 'external' ? 'Player externo' : (system.keyboard ? 'Núcleo integrado · teclado virtual' : `Núcleo integrado · ${system.core}`);
       return `<article class="description-card"><div><h4>${system.name}</h4><span>${mode}</span></div><p>${SYSTEM_DESCRIPTIONS[id] || 'Sistema retrô disponível no catálogo.'}</p></article>`;
     }).join('')}</div></section>`;
   }).join('');
@@ -939,6 +1052,8 @@ libraryInput.addEventListener('change', async (event) => {
   await importFiles(files);
 });
 document.querySelector('#player-back').addEventListener('click', closePlayer);
+virtualKeyboardToggle.addEventListener('click', () => setVirtualKeyboardOpen(!keyboardOpen));
+document.querySelector('#player-keyboard-close').addEventListener('click', () => setVirtualKeyboardOpen(false));
 document.querySelector('#settings-open').addEventListener('click', openSettings);
 document.querySelector('#player-settings-open').addEventListener('click', openSettings);
 const systemDescriptionsDialog = document.querySelector('#system-descriptions-dialog');
@@ -1118,7 +1233,7 @@ function renderSystemPicker() {
   document.querySelector('#system-picker-count').textContent = `${entries.length} sistemas · ${Object.values(SYSTEMS).filter((system) => system.kind !== 'external').length} integrados`;
   pickerResults.innerHTML = entries.map(([id, system]) => {
     const external = system.kind === 'external';
-    const badge = external ? 'EXTERNO' : (system.threaded ? 'DESEMPENHO' : (system.biosKey || system.biosKeys ? 'BIOS' : 'INTEGRADO'));
+    const badge = external ? 'EXTERNO' : (system.keyboard ? 'TECLADO' : (system.threaded ? 'DESEMPENHO' : (system.biosKey || system.biosKeys ? 'BIOS' : 'INTEGRADO')));
     return `<button type="button" class="picker-system${selectedSystem === id ? ' is-selected' : ''}" data-picker-system="${id}" aria-pressed="${selectedSystem === id}"><span class="picker-system-top"><span class="picker-system-icon" aria-hidden="true">${external ? '↗' : (system.core ? '▣' : '◈')}</span><span class="picker-badge${external ? ' is-external' : ''}">${badge}</span></span><strong>${system.name}</strong><small>${SYSTEM_SUMMARIES[id] || (external ? 'Abre uma solução externa' : 'Núcleo EmulatorJS')}</small></button>`;
   }).join('') || '<p class="picker-empty">Nenhum sistema encontrado. Tente outro nome.</p>';
 }
@@ -1135,6 +1250,8 @@ pickerResults.addEventListener('click', (event) => {
 systemPicker.addEventListener('click', (event) => { if (event.target === systemPicker) systemPicker.close(); });
 function updateSystemActions() {
   const externalSystem = SYSTEMS[selectedSystem]?.kind === 'external';
+  virtualKeyboardToggle.hidden = !SYSTEMS[selectedSystem]?.keyboard;
+  if (!SYSTEMS[selectedSystem]?.keyboard && keyboardOpen) setVirtualKeyboardOpen(false);
   const actionName = selectedSystem === 'psvita' ? 'Obter Vita3K' : 'Abrir player de PS2';
   chooseButton.innerHTML = externalSystem ? `<span aria-hidden="true">↗</span> ${actionName}` : '<span aria-hidden="true">▶</span> Abrir uma ROM';
   libraryImportButton.disabled = externalSystem;

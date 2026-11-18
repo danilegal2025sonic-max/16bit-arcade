@@ -1,6 +1,6 @@
 # 16-Bit Arcade
 
-Emulador retrô para navegador, computador e Android. A versão 2.2.2 inclui o runtime EmulatorJS e núcleos locais para iniciar sem baixar esses arquivos na primeira execução. ROMs, BIOS e firmware continuam sendo escolhidos pelo usuário e não vêm no app.
+Emulador retrô para navegador, computador e Android. A versão 3.0.0 inclui o runtime EmulatorJS e núcleos locais para iniciar sem baixar esses arquivos na primeira execução. ROMs, BIOS e firmware continuam sendo escolhidos pelo usuário e não vêm no app.
 
 ## Publicar no GitHub Pages
 
@@ -24,6 +24,7 @@ O APK, `node_modules` e arquivos temporários de build ficam fora do repositóri
 - **2.2.0** — animação de abertura, som configurável ao iniciar ROM, guia com descrições dos sistemas e menu de desenvolvedor com diagnóstico e logs; correções no direcionamento e validação de arquivos. A BIOS funciona como firmware junto de um jogo; o núcleo não oferece inicialização sem ROM.
 - **2.2.1** — preserva a extensão original da ROM ao enviá-la ao núcleo.
 - **2.2.2** — carrega o runtime incluído diretamente do app, sem depender do service worker para encontrar o arquivo inicial; adiciona suporte a publicação no GitHub Pages.
+- **3.0.0** — adiciona Atari 8-bit, ZX Spectrum, Amstrad CPC e Doom; inclui núcleos alternativos para NES, Nintendo DS, Nintendo 64, PlayStation e arcade; acrescenta teclado virtual para computadores retrô e fixa as versões dos pacotes dos núcleos.
 
 ## Sistemas integrados
 
@@ -31,18 +32,19 @@ O APK, `node_modules` e arquivos temporários de build ficam fora do repositóri
 - **Nintendo:** NES/Famicom, SNES, Game Boy, Game Boy Color, Game Boy Advance, Nintendo DS e Nintendo 64.
 - **PlayStation:** PS1 e PSP. PS2 e PS Vita são atalhos para soluções externas; não são núcleos integrados.
 - **Computadores:** Commodore 64, 128, PET, Plus/4, VIC-20 e Amiga; PC MS-DOS.
-- **Atari e retrô:** Atari 2600, 5200, 7800, Lynx e Jaguar; Virtual Boy; 3DO; ColecoVision; PC Engine/TurboGrafx-16; Neo Geo Pocket; WonderSwan e NEC PC-FX.
-- **Arcade:** FBNeo e MAME 2003. Use o sistema correspondente no seletor para abrir arquivos `.zip` ou `.7z` de jogos arcade. **PC MS-DOS** usa DOSBox Pure, requer threads/isolamento no navegador e abre pacotes de jogos `.zip` ou `.7z`.
+- **Atari e retrô:** Atari 2600, 5200, 7800, 8-bit (400/800/XL/XE), Lynx e Jaguar; Virtual Boy; 3DO; ColecoVision; PC Engine/TurboGrafx-16; Neo Geo Pocket; WonderSwan e NEC PC-FX.
+- **Computadores adicionais:** Sinclair ZX Spectrum e Amstrad CPC. **PC MS-DOS** usa DOSBox Pure e abre pacotes de jogos `.zip` ou `.7z`.
+- **Arcade e Doom:** FBNeo e MAME 2003/2003 Plus; PrBoom para arquivos de jogo Doom `.wad`. Use versões de ROM compatíveis com o núcleo selecionado.
 
-O catálogo usa os sistemas e núcleos oferecidos pelo [EmulatorJS](https://emulatorjs.org/docs4devs/cores/). O app inclui os pacotes selecionados em `ejs-data/cores/`; o service worker procura os recursos locais primeiro e mantém um fallback para o CDN oficial.
+O catálogo usa os sistemas e núcleos oferecidos pelo [EmulatorJS](https://emulatorjs.org/docs4devs/cores/). O app inclui os núcleos selecionados em `ejs-data/cores/`; o service worker procura os recursos locais primeiro e mantém um fallback para o CDN oficial. As versões e hashes dos novos pacotes estão em `ejs-data/cores/core-packages-lock.json`. Durante uma partida, o menu do EmulatorJS permite selecionar núcleos alternativos quando o sistema oferece essa opção.
 
 ### Formatos e BIOS
 
-Use o seletor de sistema antes de abrir formatos compartilhados, como `.bin`, `.iso`, `.cue` ou `.zip`. A extensão de uma ROM compactada não identifica sozinha o console.
+Use o seletor de sistema antes de abrir formatos compartilhados, como `.bin`, `.iso`, `.cue`, `.tap`, `.sna` ou `.zip`. A extensão de uma ROM compactada não identifica sozinha o console. Os sistemas de computador mostram um botão de teclado virtual no player; mantenha uma tecla pressionada na tela para sustentar a entrada.
 
 PS1, Sega CD e Saturn podem exigir BIOS. Nintendo DS com melonDS exige `bios7.bin`, `bios9.bin` e `firmware.bin`. 3DO e ColecoVision exigem BIOS. Atari 7800 e Lynx podem usar arquivos de sistema para compatibilidade. Dreamcast funciona melhor com `dc_boot.bin` e `dc_flash.bin`; Amiga pode precisar de Kickstart; PC-FX pode precisar de BIOS. Os campos ficam em Configurações; os arquivos permanecem neste aparelho.
 
-Arcade, DOSBox, 3DO, Saturn, N64, PSP e Dreamcast podem exigir bastante desempenho e espaço. A compatibilidade varia conforme o jogo e o aparelho. O app não fornece ROMs, BIOS ou firmware.
+Arcade, DOSBox, 3DO, Saturn, N64, PSP e Dreamcast podem exigir bastante desempenho e espaço. A compatibilidade varia conforme o jogo e o aparelho. Doom precisa de um arquivo WAD compatível, fornecido pelo usuário. O app não fornece jogos, ROMs, BIOS ou firmware.
 
 ## Recursos
 
