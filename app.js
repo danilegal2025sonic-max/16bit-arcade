@@ -77,7 +77,7 @@ const SYSTEMS = {
   amstradcpc: { name: 'Amstrad CPC', core: 'cap32', keyboard: true, extensions: ['dsk','sna','cdt','cpr','voc','zip','7z'] },
   doom: { name: 'Doom (PrBoom)', core: 'prboom', keyboard: true, extensions: ['wad','zip','7z'] },
 };
-const CURRENT_VERSION = '5.1.2';
+const CURRENT_VERSION = '5.1.3';
 const SYSTEM_KEY = 'sixteenbit-system-v1';
 
 const DB_NAME = 'sixbit-local-library';
@@ -1385,9 +1385,120 @@ const windowsVmStartButton = document.querySelector('#windows-vm-start');
 const windowsVmRestartButton = document.querySelector('#windows-vm-restart');
 const windowsVmStopButton = document.querySelector('#windows-vm-stop');
 const windowsVmFullscreenButton = document.querySelector('#windows-vm-fullscreen');
+const windowsVmCopyReportButton = document.querySelector('#windows-vm-copy-report');
+const windowsVmResetDiskButton = document.querySelector('#windows-vm-reset-disk');
+const windowsVmTelemetry = document.querySelector('#windows-vm-telemetry');
+const windowsVmScreenHint = document.querySelector('#windows-vm-screen-hint');
+const windowsVmScreenHintTitle = document.querySelector('#windows-vm-screen-hint-title');
+const windowsVmScreenHintCopy = document.querySelector('#windows-vm-screen-hint-copy');
+let windowsVmVideoReady = false;
+let windowsVmScreenMode = '';
+let windowsVmBootStartedAt = 0;
+let windowsVmLastBootElapsedSeconds = 0;
+let windowsVmBootTimeout = 0;
+let windowsVmLoadTimeout = 0;
+let windowsVmVideoProbeTimer = 0;
+let windowsVmDiskReadSectors = 0;
+let windowsVmDiskWriteSectors = 0;
+let windowsVmLastError = '';
 
 function setWindowsVmStatus(message) {
   windowsVmStatus.textContent = message;
+}
+
+function setWindowsVmScreenHint(title, message, visible = true) {
+  windowsVmScreenHintTitle.textContent = title;
+  windowsVmScreenHintCopy.textContent = message;
+  windowsVmScreenHint.hidden = !visible;
+}
+
+function resetWindowsVmDiagnostics() {
+  clearTimeout(windowsVmBootTimeout);
+  clearTimeout(windowsVmLoadTimeout);
+  clearTimeout(windowsVmVideoProbeTimer);
+  windowsVmBootTimeout = 0;
+  windowsVmLoadTimeout = 0;
+  windowsVmVideoProbeTimer = 0;
+  windowsVmVideoReady = false;
+  windowsVmScreenMode = '';
+  windowsVmBootStartedAt = 0;
+  windowsVmLastBootElapsedSeconds = 0;
+  windowsVmDiskReadSectors = 0;
+  windowsVmDiskWriteSectors = 0;
+  windowsVmLastError = '';
+  windowsVmTelemetry.textContent = 'Preparando PC virtual · vídeo ainda não detectado';
+  setWindowsVmScreenHint('Inicializando o PC virtual', 'O app está preparando o firmware, a memória e as mídias selecionadas.');
+}
+
+function markWindowsVmScreenSignal(mode) {
+  windowsVmScreenMode = mode;
+  if (windowsVmVideoReady) return;
+  windowsVmVideoReady = true;
+  clearTimeout(windowsVmBootTimeout);
+  clearTimeout(windowsVmVideoProbeTimer);
+  windowsVmBootTimeout = 0;
+  windowsVmVideoProbeTimer = 0;
+  setWindowsVmScreenHint('', '', false);
+  windowsVmTelemetry.textContent = `Sinal de vídeo detectado · ${mode}`;
+  if (/sem imagem|aguardando imagem|não mostrou imagem/i.test(windowsVmStatus.textContent)) {
+    setWindowsVmStatus(`O vídeo do PC virtual iniciou (${mode}). Aguarde o Windows ou o Setup.`);
+  }
+}
+
+function probeWindowsVmCanvas(vm) {
+  if (windowsVm !== vm || windowsVmVideoReady) return;
+  const canvas = windowsVmScreen.querySelector('.vm-screen-canvas');
+  if (canvas?.width && canvas?.height && canvas.style.display !== 'none') {
+    try {
+      const pixels = canvas.getContext('2d', { willReadFrequently: true }).getImageData(0, 0, canvas.width, canvas.height).data;
+      for (let offset = 0; offset < pixels.length; offset += 16) {
+        if (pixels[offset] > 24 || pixels[offset + 1] > 24 || pixels[offset + 2] > 24) {
+          markWindowsVmScreenSignal(`VGA ${canvas.width}×${canvas.height}`);
+          return;
+        }
+      }
+    } catch { /* Keep the boot hint visible if this WebView does not allow canvas inspection. */ }
+  }
+  if (Date.now() - windowsVmBootStartedAt < 90_000) {
+    windowsVmVideoProbeTimer = window.setTimeout(() => probeWindowsVmCanvas(vm), 1000);
+  }
+}
+
+function monitorWindowsVmBoot(vm) {
+  windowsVmBootStartedAt = Date.now();
+  windowsVmLastBootElapsedSeconds = 0;
+  if (windowsVmVideoReady) return;
+  setWindowsVmScreenHint('BIOS iniciada · aguardando imagem', 'O primeiro boot pode demorar. Se continuar preto após 90 segundos, tente Reiniciar ou pressione F12 para abrir o menu de boot.');
+  windowsVmTelemetry.textContent = 'PC ligado · aguardando sinal de vídeo';
+  windowsVmVideoProbeTimer = window.setTimeout(() => probeWindowsVmCanvas(vm), 500);
+  windowsVmBootTimeout = window.setTimeout(() => {
+    if (windowsVm !== vm || windowsVmVideoReady) return;
+    setWindowsVmScreenHint('Ainda sem sinal de vídeo', 'Aguarde até 90 segundos. Se continuar preto, tente Reiniciar; pressione F12 e escolha o CD, ou confira se a ISO inicializa em um PC virtual.');
+    windowsVmTelemetry.textContent = 'Sem imagem de vídeo após 45 s · confira a ISO ou o disco selecionado';
+    setWindowsVmStatus('A máquina está ligada, mas ainda não mostrou imagem após 45 segundos. Aguarde até 90 segundos; depois tente Reiniciar ou F12 para selecionar a mídia de boot.');
+  }, 45_000);
+}
+
+function getWindowsVmReport() {
+  const disk = document.querySelector('#windows-vm-disk').files?.[0];
+  const cd = document.querySelector('#windows-vm-cd').files?.[0];
+  return {
+    appVersion: CURRENT_VERSION,
+    vm: {
+      state: windowsVm ? (windowsVmReady ? 'running' : 'loading') : 'stopped',
+      memoryMb: Number(document.querySelector('#windows-vm-memory').value),
+      diskMode: disk ? 'selected-raw-image' : (windowsVmSessionMeta ? 'local-virtual-disk' : 'not-started'),
+      cdAttached: Boolean(cd),
+      cdSizeBytes: cd?.size || 0,
+      videoSignal: windowsVmVideoReady,
+      videoMode: windowsVmScreenMode || 'none',
+      bootElapsedSeconds: windowsVmBootStartedAt ? Math.floor((Date.now() - windowsVmBootStartedAt) / 1000) : windowsVmLastBootElapsedSeconds,
+      diskReadSectors: windowsVmDiskReadSectors,
+      diskWriteSectors: windowsVmDiskWriteSectors,
+      lastErrorType: windowsVmLastError || 'none',
+      userAgent: navigator.userAgent,
+    },
+  };
 }
 
 function updateWindowsVmButtons(state) {
@@ -1395,6 +1506,7 @@ function updateWindowsVmButtons(state) {
   windowsVmRestartButton.disabled = state !== 'running';
   windowsVmStopButton.disabled = state === 'stopped';
   windowsVmFullscreenButton.disabled = state !== 'running';
+  windowsVmResetDiskButton.disabled = state !== 'stopped';
 }
 
 function openWindowsVmDatabase() {
@@ -1452,6 +1564,21 @@ async function deleteWindowsVmSession(key) {
   }
 }
 
+async function clearWindowsVmSessions() {
+  const database = await openWindowsVmDatabase();
+  try {
+    await new Promise((resolve, reject) => {
+      const transaction = database.transaction(WINDOWS_VM_DB_STORE, 'readwrite');
+      transaction.objectStore(WINDOWS_VM_DB_STORE).clear();
+      transaction.oncomplete = () => resolve();
+      transaction.onerror = () => reject(transaction.error || new Error('Não foi possível apagar as sessões salvas.'));
+      transaction.onabort = () => reject(transaction.error || new Error('Não foi possível apagar as sessões salvas.'));
+    });
+  } finally {
+    database.close();
+  }
+}
+
 async function getWindowsVmVirtualDisk() {
   if (!navigator.storage?.getDirectory) throw new Error('Este navegador não oferece armazenamento local para criar o disco virtual. Atualize o Android System WebView e tente novamente.');
   const root = await navigator.storage.getDirectory();
@@ -1498,6 +1625,14 @@ async function stopWindowsVm() {
   windowsVmStopPromise = (async () => {
   const vm = windowsVm;
   const wasReady = windowsVmReady;
+  if (windowsVmBootStartedAt) windowsVmLastBootElapsedSeconds = Math.floor((Date.now() - windowsVmBootStartedAt) / 1000);
+  windowsVmBootStartedAt = 0;
+  clearTimeout(windowsVmBootTimeout);
+  clearTimeout(windowsVmLoadTimeout);
+  clearTimeout(windowsVmVideoProbeTimer);
+  windowsVmBootTimeout = 0;
+  windowsVmLoadTimeout = 0;
+  windowsVmVideoProbeTimer = 0;
   windowsVm = null;
   windowsVmReady = false;
   let saved = false;
@@ -1521,6 +1656,8 @@ async function stopWindowsVm() {
   windowsVmSessionKey = '';
   windowsVmSessionMeta = null;
   updateWindowsVmButtons('stopped');
+  windowsVmTelemetry.textContent = `PC virtual parado · último sinal VGA: ${windowsVmScreenMode || 'nenhum'}`;
+  setWindowsVmScreenHint('PC virtual parado', 'Selecione a ISO do XP ou um disco RAW e toque em Iniciar / instalar.');
   return { hadVm: Boolean(vm), autoSession, saved, saveError };
   })();
   try { return await windowsVmStopPromise; }
@@ -1546,6 +1683,7 @@ async function startWindowsVm() {
 
   await stopWindowsVm();
   if (!windowsVmDialog.open) return;
+  resetWindowsVmDiagnostics();
   const memorySize = Number(document.querySelector('#windows-vm-memory').value) * 1024 * 1024;
   let disk = selectedDisk;
   let sessionRecord = null;
@@ -1556,6 +1694,8 @@ async function startWindowsVm() {
     try {
       disk = await getWindowsVmVirtualDisk();
     } catch (error) {
+      windowsVmLastError = error?.name || 'Error';
+      setWindowsVmScreenHint('Não foi possível criar o disco virtual', explainWindowsVmError(error));
       setWindowsVmStatus(explainWindowsVmError(error));
       return;
     }
@@ -1607,11 +1747,19 @@ async function startWindowsVm() {
       boot_order: 0x213,
       acpi: false,
       cpuid_level: 2,
+      bootmenu: true,
       autostart: false,
     };
     if (cd) options.cdrom = { buffer: cd, async: true };
     const vm = new V86(options);
     windowsVm = vm;
+    windowsVmLoadTimeout = window.setTimeout(() => {
+      if (windowsVm !== vm || windowsVmReady) return;
+      windowsVmLastError = 'InitializationTimeout';
+      setWindowsVmScreenHint('O runtime ainda não ficou pronto', 'Verifique se o app está atualizado e toque em Parar e salvar; depois tente iniciar novamente.');
+      windowsVmTelemetry.textContent = 'Runtime v86 sem confirmação de pronto após 60 s';
+      setWindowsVmStatus('O runtime do PC virtual não ficou pronto após 60 segundos. Pare a máquina e tente novamente.');
+    }, 60_000);
     vm.add_listener('download-progress', (event) => {
       if (event.lengthComputable && event.total > 0) {
         const percent = Math.min(100, Math.round(event.loaded / event.total * 100));
@@ -1619,17 +1767,37 @@ async function startWindowsVm() {
       }
     });
     vm.add_listener('download-error', (event) => {
+      windowsVmLastError = 'MediaReadError';
       setWindowsVmStatus(`Falha ao ler ${event.file_name || 'a imagem de disco'}. Tente uma imagem RAW local.`);
+    });
+    vm.add_listener('screen-set-size', (screenSize) => {
+      const [width, height, bpp] = screenSize;
+      const mode = bpp ? `${width}×${height} · ${bpp} bpp` : `${width}×${height} · texto VGA`;
+      windowsVmScreenMode = mode;
+      if (!windowsVmVideoReady) windowsVmTelemetry.textContent = `Modo de vídeo iniciado · ${mode} · aguardando pixels`;
+    });
+    vm.add_listener('screen-put-char', (screenChar) => {
+      const [, , character] = screenChar;
+      if (character > 32) markWindowsVmScreenSignal('texto VGA');
+    });
+    vm.add_listener('ide-read-end', (read) => {
+      if (Array.isArray(read)) windowsVmDiskReadSectors += Number(read[2]) || 0;
+    });
+    vm.add_listener('ide-write-end', (write) => {
+      if (Array.isArray(write)) windowsVmDiskWriteSectors += Number(write[2]) || 0;
     });
     vm.add_listener('emulator-ready', async () => {
       try {
         if (windowsVm !== vm) return;
+        clearTimeout(windowsVmLoadTimeout);
+        windowsVmLoadTimeout = 0;
         let sessionRestored = false;
         if (canResumeSession && windowsVmSessionKey) {
           try {
             await vm.restore_state(sessionRecord.state);
             sessionRestored = true;
           } catch (error) {
+            windowsVmLastError = error?.name || 'RestoreError';
             recentAppErrors.push(`Windows XP restore: ${error?.message || error}`);
             try { await deleteWindowsVmSession(windowsVmSessionKey); }
             catch (deleteError) { recentAppErrors.push(`Windows XP session cleanup: ${deleteError?.message || deleteError}`); }
@@ -1638,6 +1806,7 @@ async function startWindowsVm() {
         }
         if (windowsVm !== vm) return;
         windowsVmReady = true;
+        monitorWindowsVmBoot(vm);
         await vm.run();
         updateWindowsVmButtons('running');
         if (sessionRestored) setWindowsVmStatus('Sessão do XP retomada. Use Parar para salvar antes de sair.');
@@ -1645,13 +1814,19 @@ async function startWindowsVm() {
         else setWindowsVmStatus('PC virtual ligado. Toque na tela ou use as teclas rápidas abaixo.');
       } catch (error) {
         recentAppErrors.push(`Windows XP VM: ${error?.message || error}`);
+        windowsVmSessionKey = '';
+        windowsVmSessionMeta = null;
         await stopWindowsVm();
+        windowsVmLastError = error?.name || 'Error';
+        windowsVmTelemetry.textContent = `Falha ao iniciar · ${windowsVmLastError}`;
+        setWindowsVmScreenHint('Falha ao iniciar o PC virtual', 'Copie o diagnóstico para registrar o tipo de erro e as etapas de boot.');
         setWindowsVmStatus('Não foi possível iniciar a máquina virtual neste aparelho.');
       }
     });
     vm.add_listener('emulator-started', () => {
+      if (windowsVm !== vm) return;
       updateWindowsVmButtons('running');
-      setWindowsVmStatus('PC virtual em execução.');
+      if (!windowsVmVideoReady) setWindowsVmStatus('PC virtual ligado · aguardando a primeira imagem de vídeo…');
     });
     vm.add_listener('emulator-stopped', () => {
       if (windowsVm) setWindowsVmStatus('Máquina pausada. Use Reiniciar para voltar ao boot.');
@@ -1659,6 +1834,9 @@ async function startWindowsVm() {
   } catch (error) {
     recentAppErrors.push(`Windows XP VM: ${error?.message || error}`);
     await stopWindowsVm();
+    windowsVmLastError = error?.name || 'Error';
+    windowsVmTelemetry.textContent = `Falha ao carregar o runtime · ${windowsVmLastError}`;
+    setWindowsVmScreenHint('Falha ao carregar o runtime', 'Copie o diagnóstico para registrar o tipo de erro e as etapas de boot.');
     setWindowsVmStatus(`Falha ao carregar o runtime x86: ${explainWindowsVmError(error)}`);
   }
 }
@@ -1713,8 +1891,49 @@ document.querySelector('#windows-vm-open').addEventListener('click', () => {
 windowsVmStartButton.addEventListener('click', startWindowsVm);
 windowsVmRestartButton.addEventListener('click', () => {
   if (!windowsVm) return;
+  resetWindowsVmDiagnostics();
+  monitorWindowsVmBoot(windowsVm);
   windowsVm.restart();
   setWindowsVmStatus('Reiniciando o PC virtual…');
+});
+windowsVmCopyReportButton.addEventListener('click', async () => {
+  try {
+    await navigator.clipboard.writeText(JSON.stringify(getWindowsVmReport(), null, 2));
+    showToast('Diagnóstico do PC virtual copiado, sem nomes de arquivos.');
+  } catch {
+    showToast('A cópia não está disponível neste navegador.');
+  }
+});
+windowsVmResetDiskButton.addEventListener('click', async () => {
+  if (windowsVm) {
+    setWindowsVmStatus('Pare o PC virtual antes de apagar o disco local.');
+    return;
+  }
+  if (!window.confirm('Apagar o disco virtual local de 2 GB e todas as sessões salvas do Windows XP neste aparelho? Isso remove a instalação local e não pode ser desfeito. Imagens RAW escolhidas por você não serão alteradas.')) return;
+  windowsVmStartButton.disabled = true;
+  windowsVmResetDiskButton.disabled = true;
+  setWindowsVmStatus('Apagando as sessões e recriando o disco virtual local…');
+  try {
+    await clearWindowsVmSessions();
+    const root = await navigator.storage.getDirectory();
+    const directory = await root.getDirectoryHandle('16bit-arcade-vm', { create: true });
+    try { await directory.removeEntry('windows-xp-2gb.raw'); }
+    catch (error) { if (error?.name !== 'NotFoundError') throw error; }
+    await getWindowsVmVirtualDisk();
+    windowsVmSessionKey = '';
+    windowsVmSessionMeta = null;
+    resetWindowsVmDiagnostics();
+    windowsVmTelemetry.textContent = 'Disco virtual vazio · sessão XP removida';
+    setWindowsVmScreenHint('Disco virtual zerado', 'Escolha a ISO do XP e toque em Iniciar / instalar para começar do zero.');
+    setWindowsVmStatus('O disco virtual foi recriado vazio e as sessões salvas foram apagadas.');
+  } catch (error) {
+    windowsVmLastError = error?.name || 'Error';
+    windowsVmTelemetry.textContent = `Falha ao recriar o disco · ${windowsVmLastError}`;
+    setWindowsVmScreenHint('Não foi possível recriar o disco', explainWindowsVmError(error));
+    setWindowsVmStatus(`Falha ao apagar ou recriar o disco virtual: ${explainWindowsVmError(error)}`);
+  } finally {
+    updateWindowsVmButtons('stopped');
+  }
 });
 windowsVmStopButton.addEventListener('click', async () => {
   const result = await stopWindowsVm();

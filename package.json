@@ -1,6 +1,6 @@
 {
   "name": "16bit-mega-drive",
-  "version": "5.1.2",
+  "version": "5.1.3",
   "private": true,
   "description": "Emulador multi-sistema retrô para web e Android",
   "scripts": {

@@ -470,9 +470,14 @@ html:fullscreen .player-footer, html:-webkit-full-screen .player-footer { flex-b
 .vm-actions button:disabled { opacity: .45; cursor: default; }
 .vm-status { flex: 0 0 auto; margin: 8px 0; color: var(--accent); font: 7px var(--mono); line-height: 1.5; }
 .vm-screen-wrap { flex: 0 0 auto; min-height: 160px; overflow: auto; border: 1px solid var(--line-bright); border-radius: 6px; background: #000; }
-.vm-screen { min-width: 320px; min-height: 160px; color: #ddd; outline: none; touch-action: none; }
+.vm-screen { position: relative; min-width: 320px; min-height: 160px; color: #ddd; outline: none; touch-action: none; background: #000; }
 .vm-screen-text { padding: 5px; color: #ddd; font: 11px/1.1 monospace; white-space: pre; }
 .vm-screen-canvas { display: block; max-width: 100%; height: auto; margin: 0 auto; image-rendering: pixelated; }
+.vm-screen-hint { position: absolute; z-index: 2; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; min-height: 160px; padding: 18px; background: #000; color: var(--ink); text-align: center; }
+.vm-screen-hint[hidden] { display: none; }
+.vm-screen-hint strong { color: var(--accent); font: 10px var(--mono); }
+.vm-screen-hint span { max-width: 520px; color: var(--muted); font-size: 8px; line-height: 1.55; }
+.vm-telemetry { flex: 0 0 auto; margin: -4px 0 7px; color: var(--quiet); font: 6px/1.5 var(--mono); }
 .vm-keyboard { display: flex; flex: 0 0 auto; flex-wrap: wrap; gap: 5px; margin-top: 8px; }
 .vm-keyboard button { min-height: 34px; flex: 1 1 auto; padding: 0 9px; border: 1px solid var(--line); border-radius: 5px; background: #ffffff08; color: var(--ink); font-size: 8px; }
 .vm-text-form { flex: 0 0 auto; margin-top: 9px; }

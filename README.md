@@ -1,6 +1,6 @@
 # 16-Bit Arcade
 
-Emulador retrô para navegador, computador e Android. A **Ultimate Update 5.1.2** corrige a leitura de ISOs no PC virtual e adiciona a tecla F5 para escolher o perfil Standard PC do Windows XP durante o Setup. Também aplica identidade visual por sistema, controles de toque configuráveis e carregamento local com recuperação de núcleo pelo service worker. ROMs, BIOS, firmware e imagens do Windows continuam sendo escolhidos pelo usuário.
+Emulador retrô para navegador, computador e Android. A **Ultimate Update 5.1.3** melhora o diagnóstico de boot do PC virtual, mostra quando ainda não há sinal de vídeo e adiciona o menu de boot da BIOS. Também aplica identidade visual por sistema, controles de toque configuráveis e carregamento local com recuperação de núcleo pelo service worker. ROMs, BIOS, firmware e imagens do Windows continuam sendo escolhidos pelo usuário.
 
 ## Publicar no GitHub Pages
 
@@ -30,6 +30,7 @@ O APK, `node_modules` e arquivos temporários de build ficam fora do repositóri
 - **5.1.0 — Developer PC** — integra o runtime v86 ao APK e ao PWA; adiciona um PC virtual x86 experimental acessível pelo modo de desenvolvedor, compatibilidade com disco RAW e CD opcional, memória configurável, teclas de toque e tela cheia; inclui os arquivos de runtime necessários para uso offline, mas não inclui Windows XP nem imagens de disco.
 - **5.1.1 — Instalação de XP** — aceita uma ISO inicializável do usuário sem exigir arquivo `.img`; cria um disco virtual local de 2 GB e salva a sessão no aparelho ao parar, permitindo retomá-la com a mesma ISO e memória.
 - **5.1.2 — Compatibilidade do Setup** — lê os arquivos de disco direto do objeto local, evitando a rota de URL temporária; adiciona a tecla F5 e a instrução para selecionar **Standard PC** durante a instalação do XP.
+- **5.1.3 — Boot assistido do XP** — habilita o menu de boot da BIOS, adiciona F12 e setas aos controles rápidos, define 512 MB como memória inicial recomendada e mostra um aviso útil em vez de deixar a área de vídeo sem contexto; acrescenta monitoramento do sinal VGA, contadores de leitura/escrita do disco e cópia de diagnóstico sem nomes de arquivos.
 
 ## Sistemas integrados
 
