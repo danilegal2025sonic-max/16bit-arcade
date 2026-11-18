@@ -1,6 +1,6 @@
 # 16-Bit Arcade
 
-Emulador retrô para navegador, computador e Android. A versão 3.0.0 inclui o runtime EmulatorJS e núcleos locais para iniciar sem baixar esses arquivos na primeira execução. ROMs, BIOS e firmware continuam sendo escolhidos pelo usuário e não vêm no app.
+Emulador retrô para navegador, computador e Android. A versão 4.0.0 inclui o runtime e os núcleos EmulatorJS no app, controles virtuais configuráveis e suporte a mídias de CD com arquivos de faixa associados. ROMs, BIOS e firmware continuam sendo escolhidos pelo usuário e não vêm no app.
 
 ## Publicar no GitHub Pages
 
@@ -25,34 +25,35 @@ O APK, `node_modules` e arquivos temporários de build ficam fora do repositóri
 - **2.2.1** — preserva a extensão original da ROM ao enviá-la ao núcleo.
 - **2.2.2** — carrega o runtime incluído diretamente do app, sem depender do service worker para encontrar o arquivo inicial; adiciona suporte a publicação no GitHub Pages.
 - **3.0.0** — adiciona Atari 8-bit, ZX Spectrum, Amstrad CPC e Doom; inclui núcleos alternativos para NES, Nintendo DS, Nintendo 64, PlayStation e arcade; acrescenta teclado virtual para computadores retrô e fixa as versões dos pacotes dos núcleos.
+- **4.0.0** — integra Sega SG-1000, Sega Pico experimental, Neo Geo, SuperGrafx e PC Engine CD; inclui runtime EmulatorJS minificado local para reduzir falhas de download; redesenha controles virtuais por sistema com direcional digital ou analógico; importa e salva os arquivos associados a mídias CUE/GDI/M3U; separa os saves por jogo.
 
 ## Sistemas integrados
 
-- **Sega:** Mega Drive/Genesis, Sega CD, 32X, Saturn, Master System, Game Gear e Dreamcast.
+- **Sega:** Mega Drive/Genesis, Sega CD, 32X, Saturn, Master System, Game Gear, Dreamcast, SG-1000 e Sega Pico experimental.
 - **Nintendo:** NES/Famicom, SNES, Game Boy, Game Boy Color, Game Boy Advance, Nintendo DS e Nintendo 64.
 - **PlayStation:** PS1 e PSP. PS2 e PS Vita são atalhos para soluções externas; não são núcleos integrados.
 - **Computadores:** Commodore 64, 128, PET, Plus/4, VIC-20 e Amiga; PC MS-DOS.
-- **Atari e retrô:** Atari 2600, 5200, 7800, 8-bit (400/800/XL/XE), Lynx e Jaguar; Virtual Boy; 3DO; ColecoVision; PC Engine/TurboGrafx-16; Neo Geo Pocket; WonderSwan e NEC PC-FX.
+- **Atari e retrô:** Atari 2600, 5200, 7800, 8-bit (400/800/XL/XE), Lynx e Jaguar; Virtual Boy; 3DO; ColecoVision; PC Engine/TurboGrafx-16, PC Engine CD e SuperGrafx; Neo Geo AES/MVS via FBNeo; Neo Geo Pocket; WonderSwan e NEC PC-FX.
 - **Computadores adicionais:** Sinclair ZX Spectrum e Amstrad CPC. **PC MS-DOS** usa DOSBox Pure e abre pacotes de jogos `.zip` ou `.7z`.
 - **Arcade e Doom:** FBNeo e MAME 2003/2003 Plus; PrBoom para arquivos de jogo Doom `.wad`. Use versões de ROM compatíveis com o núcleo selecionado.
 
-O catálogo usa os sistemas e núcleos oferecidos pelo [EmulatorJS](https://emulatorjs.org/docs4devs/cores/). O app inclui os núcleos selecionados em `ejs-data/cores/`; o service worker procura os recursos locais primeiro e mantém um fallback para o CDN oficial. As versões e hashes dos novos pacotes estão em `ejs-data/cores/core-packages-lock.json`. Durante uma partida, o menu do EmulatorJS permite selecionar núcleos alternativos quando o sistema oferece essa opção.
+O catálogo usa sistemas e núcleos do [EmulatorJS](https://emulatorjs.org/docs4devs/cores/) e alguns sistemas adicionais reconhecidos pelos mesmos núcleos. Runtime minificado, dados dos núcleos e relatórios usados pelo app são incluídos em `ejs-data/`; o service worker mantém fallback para o CDN oficial se um recurso não estiver empacotado. As versões e hashes dos novos pacotes estão em `ejs-data/cores/core-packages-lock.json`. Durante uma partida, o menu do EmulatorJS permite selecionar núcleos alternativos quando o sistema oferece essa opção.
 
 ### Formatos e BIOS
 
-Use o seletor de sistema antes de abrir formatos compartilhados, como `.bin`, `.iso`, `.cue`, `.tap`, `.sna` ou `.zip`. A extensão de uma ROM compactada não identifica sozinha o console. Os sistemas de computador mostram um botão de teclado virtual no player; mantenha uma tecla pressionada na tela para sustentar a entrada.
+Use o seletor de sistema antes de abrir formatos compartilhados, como `.bin`, `.iso`, `.cue`, `.tap`, `.sna` ou `.zip`. Para mídias `.cue`, `.gdi` ou `.m3u`, selecione junto os arquivos de faixa referenciados; eles ficam guardados como parte do jogo. A extensão de uma ROM compactada não identifica sozinha o console. Os sistemas de computador mostram um botão de teclado virtual no player; mantenha uma tecla pressionada na tela para sustentar a entrada.
 
-PS1, Sega CD e Saturn podem exigir BIOS. Nintendo DS com melonDS exige `bios7.bin`, `bios9.bin` e `firmware.bin`. 3DO e ColecoVision exigem BIOS. Atari 7800 e Lynx podem usar arquivos de sistema para compatibilidade. Dreamcast funciona melhor com `dc_boot.bin` e `dc_flash.bin`; Amiga pode precisar de Kickstart; PC-FX pode precisar de BIOS. Os campos ficam em Configurações; os arquivos permanecem neste aparelho.
+PS1, Sega CD e Saturn podem exigir BIOS. Nintendo DS com melonDS exige `bios7.bin`, `bios9.bin` e `firmware.bin`. 3DO e ColecoVision exigem BIOS. Atari 7800 e Lynx podem usar arquivos de sistema para compatibilidade. Dreamcast funciona melhor com `dc_boot.bin` e `dc_flash.bin`; Amiga pode precisar de Kickstart; PC-FX pode precisar de BIOS; jogos de CD da PC Engine podem exigir BIOS de CD. Os campos ficam em Configurações; os arquivos permanecem neste aparelho.
 
 Arcade, DOSBox, 3DO, Saturn, N64, PSP e Dreamcast podem exigir bastante desempenho e espaço. A compatibilidade varia conforme o jogo e o aparelho. Doom precisa de um arquivo WAD compatível, fornecido pelo usuário. O app não fornece jogos, ROMs, BIOS ou firmware.
 
 ## Recursos
 
 - Biblioteca local com busca, favoritos, histórico e ordenação.
-- Exportação do arquivo de jogo individual a partir do cartão na biblioteca.
-- Controles por toque, teclado ou controle Bluetooth.
+- Exportação da ROM; discos com faixas associadas saem em um ZIP completo.
+- Controles por toque adaptados ao sistema, cruz digital ou analógico, teclado virtual e controles Bluetooth com remapeamento no menu do EmulatorJS.
 - Tela cheia imersiva, efeitos CRT, ajuste de tela, volume, vibração e tela sempre ligada.
-- Núcleos e runtime localizados no APK; os recursos ausentes continuam podendo ser obtidos pelo CDN.
+- Runtime e núcleos locais no APK, sem download na primeira execução; cache local no navegador para os arquivos usados.
 - BIOS armazenadas localmente no aparelho.
 
 ## Rodar localmente

@@ -1,9 +1,9 @@
 const BASE_URL = new URL(self.registration.scope);
 const CACHE_SCOPE_KEY = BASE_URL.pathname.replace(/[^a-z0-9]+/gi, '-').replace(/^-|-$/g, '') || 'root';
-const CACHE_NAME = `16bit-shell-${CACHE_SCOPE_KEY}-v13`;
+const CACHE_NAME = `16bit-shell-${CACHE_SCOPE_KEY}-v14`;
 const EJS_PREFIX = new URL('EJSData/', BASE_URL).pathname;
 const EJS_CDN = 'https://cdn.emulatorjs.org/stable/data/';
-const APP_SHELL = ['', 'index.html', 'styles.css', 'app.js', 'manifest.webmanifest', 'icon.svg', 'icon-192.png', 'icon-512.png']
+const APP_SHELL = ['', 'index.html', 'styles.css', 'app.js', 'manifest.webmanifest', 'icon.svg', 'icon-192.png', 'icon-512.png', 'ejs-data/loader.js', 'ejs-data/emulator.min.js', 'ejs-data/emulator.min.css']
   .map((path) => new URL(path, BASE_URL).href);
 
 self.addEventListener('install', (event) => {

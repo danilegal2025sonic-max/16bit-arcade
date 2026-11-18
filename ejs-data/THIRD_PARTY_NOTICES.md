@@ -1,6 +1,6 @@
 # Third-party notices
 
-This app bundles the EmulatorJS runtime and selected core packages, version 4.2.3. The runtime license is included as `EMULATORJS-LICENSE`. Package metadata and README files are preserved under `cores/licenses/`; core reports are under `cores/reports`. The additional packages bundled in 3.0.0 are pinned and checksummed in `cores/core-packages-lock.json`.
+This app bundles the EmulatorJS runtime and selected core packages, version 4.2.3. The minified runtime entry files are bundled as `emulator.min.js` and `emulator.min.css` from the official 4.2.3 release (SHA-256 lock: `runtime-assets-lock.json`). The runtime license is included as `EMULATORJS-LICENSE`. Package metadata and README files are preserved under `cores/licenses/`; core reports are under `cores/reports`. The additional packages bundled in 3.0.0 are pinned and checksummed in `cores/core-packages-lock.json`.
 
 ## Bundled core packages
 

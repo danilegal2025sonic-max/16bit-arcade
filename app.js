@@ -29,20 +29,20 @@ const PSVITA_PLAYER_URL = 'https://vita3k.org/download.html';
 const APP_BASE_URL = new URL('.', document.baseURI);
 const SYSTEMS = {
   megadrive: { name: 'Sega Mega Drive', core: 'segaMD', control: 'segaMD', extensions: ['md','gen','bin','smd','rom'] },
-  segacd: { name: 'Sega CD', core: 'segaCD', control: 'segaCD', extensions: ['iso','chd','zip'] },
+  segacd: { name: 'Sega CD', core: 'segaCD', control: 'segaCD', extensions: ['iso','chd','cue','m3u','bin','zip'] },
   '32x': { name: 'Sega 32X', core: 'sega32x', control: 'sega32x', extensions: ['32x','zip'] },
-  saturn: { name: 'Sega Saturn', core: 'segaSaturn', control: 'segaSaturn', extensions: ['iso','chd','zip'] },
+  saturn: { name: 'Sega Saturn', core: 'segaSaturn', control: 'segaSaturn', extensions: ['iso','chd','cue','ccd','m3u','img','sub','bin','zip'] },
   mastersystem: { name: 'Sega Master System', core: 'segaMS', control: 'segaMS', biosKey: 'mastersystem', extensions: ['sms','bin','zip'] },
   gamegear: { name: 'Sega Game Gear', core: 'segaGG', control: 'segaGG', biosKey: 'gamegear', extensions: ['gg','bin','zip'] },
   gb: { name: 'Game Boy', core: 'gb', control: 'gb', biosKey: 'gb', extensions: ['gb','bin','zip'] },
   gbc: { name: 'Game Boy Color', core: 'gb', control: 'gb', biosKey: 'gbc', extensions: ['gbc','gb','bin','zip'] },
   gba: { name: 'Game Boy Advance', core: 'gba', control: 'gba', biosKey: 'gba', extensions: ['gba','bin','zip'] },
   n64: { name: 'Nintendo 64', core: 'n64', control: 'n64', extensions: ['z64','n64','v64','zip'] },
-  ps1: { name: 'PlayStation (PS1)', core: 'psx', biosKey: 'ps1', extensions: ['bin','cue','chd','iso','pbp','zip'] },
+  ps1: { name: 'PlayStation (PS1)', core: 'psx', biosKey: 'ps1', extensions: ['bin','cue','ccd','toc','m3u','chd','iso','img','sub','pbp','zip'] },
   ps2: { name: 'PlayStation 2', kind: 'external', externalUrl: PS2_PLAYER_URL, extensions: ['iso','chd','cso','zso','bin','img','zip'] },
   psvita: { name: 'PlayStation Vita', kind: 'external', externalUrl: PSVITA_PLAYER_URL, extensions: [] },
   psp: { name: 'PlayStation Portable (PSP)', core: 'psp', threaded: true, extensions: ['iso','cso','pbp','zip'] },
-  dreamcast: { name: 'Sega Dreamcast', core: 'flycast', customCore: true, requiresIsolation: true, biosKeys: ['dreamcast-boot','dreamcast-flash'], extensions: ['cdi','gdi','chd','cue','iso','elf','bin','zip'] },
+  dreamcast: { name: 'Sega Dreamcast', core: 'flycast', customCore: true, biosKeys: ['dreamcast-boot','dreamcast-flash'], extensions: ['cdi','gdi','chd','cue','m3u','iso','elf','bin','zip'] },
   nes: { name: 'Nintendo NES / Famicom', core: 'nes', control: 'nes', extensions: ['nes','unf','unif','fds','zip'] },
   snes: { name: 'Super Nintendo / SNES', core: 'snes', control: 'snes', extensions: ['sfc','smc','fig','swc','zip'] },
   nds: { name: 'Nintendo DS', core: 'nds', control: 'nds', biosKeys: ['nds-bios7','nds-bios9','nds-firmware'], extensions: ['nds','dsi','zip'] },
@@ -67,12 +67,17 @@ const SYSTEMS = {
   vic20: { name: 'Commodore VIC-20', core: 'vic20', keyboard: true, extensions: ['prg','p00','crt','tap','zip'] },
   amiga: { name: 'Commodore Amiga', core: 'amiga', keyboard: true, biosKey: 'amiga', extensions: ['adf','adz','dms','ipf','lha','zip'] },
   pcfx: { name: 'NEC PC-FX', core: 'pcfx', biosKey: 'pcfx', extensions: ['cue','chd','iso','zip'] },
+  sg1000: { name: 'Sega SG-1000', core: 'segaMD', control: 'segaMS', extensions: ['sg','bin','rom','zip','7z'] },
+  segapico: { name: 'Sega Pico', core: 'segaMD', experimental: true, extensions: ['68k','sgd','bin','zip','7z'] },
+  supergrafx: { name: 'NEC SuperGrafx', core: 'pce', extensions: ['sgx','pce','cue','chd','zip'] },
+  pcenginecd: { name: 'PC Engine CD / TurboGrafx-CD', core: 'pce', biosKey: 'pcecd', extensions: ['cue','m3u','chd','iso','bin','zip'] },
+  neogeo: { name: 'Neo Geo AES / MVS', core: 'arcade', control: 'arcade', extensions: ['zip','7z'] },
   atari8: { name: 'Atari 8-bit (400/800/XL/XE)', core: '81', keyboard: true, extensions: ['atr','atx','xex','xfd','dcm','cas','rom','zip','7z'] },
   zxspectrum: { name: 'Sinclair ZX Spectrum', core: 'fuse', keyboard: true, extensions: ['z80','sna','tap','tzx','pzx','dsk','udi','trd','zip','7z'] },
   amstradcpc: { name: 'Amstrad CPC', core: 'cap32', keyboard: true, extensions: ['dsk','sna','cdt','cpr','voc','zip','7z'] },
   doom: { name: 'Doom (PrBoom)', core: 'prboom', keyboard: true, extensions: ['wad','zip','7z'] },
 };
-const CURRENT_VERSION = '3.0.0';
+const CURRENT_VERSION = '4.0.0';
 const SYSTEM_KEY = 'sixteenbit-system-v1';
 
 const DB_NAME = 'sixbit-local-library';
@@ -88,6 +93,7 @@ const DEFAULT_SETTINGS = {
   filter: 'off',
   touchControls: true,
   layout: 'three',
+  padStyle: 'dpad',
   volume: 80,
   haptics: true,
   keepAwake: true,
@@ -104,19 +110,21 @@ const COVER_BACKGROUNDS = [
 ];
 
 const SYSTEM_GROUPS = {
-  Sega: ['megadrive','segacd','32x','saturn','mastersystem','gamegear','dreamcast'],
+  Sega: ['megadrive','segacd','32x','saturn','mastersystem','gamegear','dreamcast','sg1000','segapico'],
   Nintendo: ['nes','snes','gb','gbc','gba','nds','n64'],
   PlayStation: ['ps1','ps2','psp','psvita'],
   Atari: ['atari2600','atari5200','atari7800','jaguar','lynx','vb'],
   Computadores: ['c64','c128','pet','plus4','vic20','amiga','dos','atari8','zxspectrum','amstradcpc'],
   Arcade: ['arcade','mame2003'],
   'PC clássico': ['doom'],
-  Outros: ['3do','coleco','pce','ngp','ws','pcfx'],
+  Outros: ['3do','coleco','pce','supergrafx','pcenginecd','ngp','ws','pcfx','neogeo'],
 };
 const SYSTEM_SUMMARIES = {
   c64:'Computador doméstico · VICE', c128:'Computador doméstico · VICE', pet:'Computador clássico · VICE',
   plus4:'Computador doméstico · VICE', vic20:'Computador doméstico · VICE', amiga:'Computador 16-bit · PUAE · Kickstart',
   pcfx:'Console NEC · Mednafen', dos:'Jogos clássicos de PC', arcade:'Arcade · FinalBurn Neo', mame2003:'Arcade · MAME 2003 Plus / 2003',
+  sg1000:'Console Sega 8-bit · Genesis Plus GX', segapico:'Console educativo · Genesis Plus GX · toque',
+  supergrafx:'Console NEC · núcleo Mednafen PCE', pcenginecd:'Console de CD · Mednafen PCE · BIOS', neogeo:'Arcade/console SNK · FinalBurn Neo',
   atari8:'Computador 8-bit · Atari 400/800', zxspectrum:'Computador doméstico · Fuse',
   amstradcpc:'Computador doméstico · Caprice32', doom:'FPS clássico · PrBoom · WAD',
 };
@@ -160,6 +168,11 @@ const SYSTEM_DESCRIPTIONS = {
   vic20:'Commodore VIC-20, computador doméstico de 8 bits anterior ao C64. O núcleo VICE suporta programas e mídia do sistema; há teclado virtual.',
   amiga:'Commodore Amiga, família de computadores de 16/32 bits conhecida por jogos, música e gráficos. Jogos em disco podem exigir Kickstart; há teclado virtual.',
   pcfx:'PC-FX, console de CD da NEC lançado no Japão. O núcleo Mednafen pode exigir um arquivo BIOS compatível.',
+  sg1000:'Console doméstico Sega de 8 bits. Usa o núcleo Genesis Plus GX, que reconhece cartuchos SG-1000 em formatos como .sg.',
+  segapico:'Console educativo da Sega com livros interativos e entrada por apontamento. Usa emulação experimental do Genesis Plus GX; alguns jogos precisam de toque ou mouse.',
+  supergrafx:'Console NEC retrocompatível com a PC Engine. O núcleo Mednafen PCE reconhece jogos SuperGrafx; os arquivos costumam usar .sgx.',
+  pcenginecd:'Sistema de CD da PC Engine e TurboGrafx-16. Use imagens CUE/CHD compatíveis e uma BIOS de CD própria nas configurações.',
+  neogeo:'Neo Geo AES/MVS pelo núcleo arcade FinalBurn Neo. O pacote do jogo precisa corresponder ao núcleo; alguns jogos dependem do conjunto de BIOS Neo Geo.',
   atari8:'Família de computadores Atari 400, 800, XL e XE. Aceita imagens de disco e fita e executáveis desses computadores.',
   zxspectrum:'Computador doméstico da Sinclair, famoso por jogos em fita. Os jogos podem exigir teclado; use o teclado virtual nesta tela.',
   amstradcpc:'Computador doméstico da Amstrad, com jogos em fita, disco e cartucho. O teclado virtual ajuda em comandos e jogos de texto.',
@@ -177,6 +190,7 @@ function readSettings() {
 let settings = readSettings();
 let selectedSystem = localStorage.getItem(SYSTEM_KEY) in SYSTEMS ? localStorage.getItem(SYSTEM_KEY) : 'megadrive';
 let currentBiosUrls = [];
+let currentSidecarUrls = [];
 let dbPromise;
 let currentObjectUrl = null;
 let currentRecordId = null;
@@ -216,6 +230,9 @@ function supportsSystemGame(file, systemId) {
 }
 function systemForFile(file, preferred = selectedSystem) {
   const ext = fileExtension(file);
+  if (ext === 'sg') return 'sg1000';
+  if (['68k','sgd'].includes(ext)) return 'segapico';
+  if (ext === 'sgx') return 'supergrafx';
   if (['md','gen','smd'].includes(ext)) return 'megadrive';
   if (ext === '32x') return '32x';
   if (['cdi','gdi'].includes(ext)) return 'dreamcast';
@@ -291,8 +308,16 @@ function playStartupSound() {
     oscillator.addEventListener('ended', () => { oscillator.disconnect(); lowPass.disconnect(); envelope.disconnect(); }, { once: true });
   } catch { /* Audio is optional; game loading continues when Web Audio is unavailable. */ }
 }
-function gameId(file, systemId = systemForFile(file)) {
-  return `${systemId}|${file.name.trim().toLocaleLowerCase()}|${file.size}|${file.lastModified || 0}`;
+function gameId(file, systemId = systemForFile(file), sidecars = []) {
+  const extra = sidecars.map(({ file: item, virtualName }) => `${virtualName.toLocaleLowerCase()}|${item.size}|${item.lastModified || 0}`).sort().join(';');
+  return `${systemId}|${file.name.trim().toLocaleLowerCase()}|${file.size}|${file.lastModified || 0}|${extra}`;
+}
+
+function emulatorGameId(file, systemId = systemForFile(file)) {
+  const source = gameId(file, systemId);
+  let hash = 2166136261;
+  for (let index = 0; index < source.length; index += 1) hash = Math.imul(hash ^ source.charCodeAt(index), 16777619);
+  return ((hash >>> 0) & 0x7fffffff) || 1;
 }
 
 function openDatabase() {
@@ -328,16 +353,85 @@ async function dbRequest(mode, method, ...args) {
   });
 }
 
-async function saveGameFile(file, systemId = systemForFile(file)) {
-  const id = gameId(file, systemId);
+function selectPrimaryRom(files) {
+  const items = Array.from(files || []).filter(supportsGame);
+  if (!items.length) return null;
+  const priority = { m3u: 0, cue: 1, gdi: 2, ccd: 3, chd: 4, cdi: 5, iso: 6, zip: 7, '7z': 8 };
+  return items.sort((a, b) => (priority[fileExtension(a)] ?? 20) - (priority[fileExtension(b)] ?? 20))[0];
+}
+
+function safeDiscPath(value) {
+  const path = String(value || '').trim().replace(/^['"]|['"]$/g, '').replace(/\\/g, '/');
+  const parts = path.split('/').filter((part) => part && part !== '.');
+  if (!parts.length || parts.includes('..') || parts.some((part) => /[\0\r\n]/.test(part))) return '';
+  return parts.join('/');
+}
+
+async function discAssetReferences(file, depth = 0) {
+  if (depth > 5) return [];
+  const ext = fileExtension(file);
+  if (ext === 'cue') {
+    const text = await file.text();
+    return [...text.matchAll(/^\s*FILE\s+(?:"([^"]+)"|'([^']+)'|([^\s]+))/gim)]
+      .map((match) => safeDiscPath(match[1] || match[2] || match[3])).filter(Boolean);
+  }
+  if (ext === 'gdi') {
+    const lines = (await file.text()).split(/\r?\n/).slice(1);
+    return lines.map((line) => {
+      const match = line.match(/^\s*\d+\s+\d+\s+\d+\s+\d+\s+(?:"([^"]+)"|(.+?))\s+\d+\s*$/);
+      return safeDiscPath(match?.[1] || match?.[2]);
+    }).filter(Boolean);
+  }
+  if (ext === 'm3u') {
+    const text = await file.text();
+    return text.split(/\r?\n/).map((line) => line.trim()).filter((line) => line && !line.startsWith('#')).map(safeDiscPath).filter(Boolean);
+  }
+  if (ext === 'ccd') {
+    const stem = file.name.replace(/\.ccd$/i, '');
+    return [`${stem}.img`, `${stem}.sub`];
+  }
+  return [];
+}
+
+async function resolveDiscBundle(primary, files, visited = new Set()) {
+  const selected = Array.from(files || []);
+  const sidecars = [];
+  const missing = [];
+  const visit = async (descriptor, isPrimary = false, depth = 0) => {
+    if (depth > 5) return;
+    const refs = await discAssetReferences(descriptor, depth);
+    for (const virtualName of refs) {
+      const key = virtualName.toLocaleLowerCase();
+      if (visited.has(key)) continue;
+      visited.add(key);
+      const actualName = virtualName.split('/').pop().toLocaleLowerCase();
+      const match = selected.find((candidate) => candidate !== primary && candidate.name.toLocaleLowerCase() === actualName)
+        || selected.find((candidate) => candidate !== primary && candidate.name.toLocaleLowerCase() === virtualName.toLocaleLowerCase());
+      if (!match) {
+        if (!(fileExtension(descriptor) === 'ccd' && virtualName.toLocaleLowerCase().endsWith('.sub'))) missing.push(virtualName);
+        continue;
+      }
+      if (fileExtension(match) === 'cue' || fileExtension(match) === 'gdi' || fileExtension(match) === 'm3u' || fileExtension(match) === 'ccd') {
+        sidecars.push({ file: match, virtualName });
+        await visit(match, false, depth + 1);
+      } else sidecars.push({ file: match, virtualName });
+    }
+  };
+  if (['cue','gdi','m3u','ccd'].includes(fileExtension(primary))) await visit(primary, true);
+  return { sidecars, missing };
+}
+
+async function saveGameFile(file, systemId = systemForFile(file), sidecars = []) {
+  const id = gameId(file, systemId, sidecars);
   const existing = await dbRequest('readonly', 'get', id);
   const record = {
     id,
     name: file.name,
-    size: file.size,
+    size: file.size + sidecars.reduce((total, sidecar) => total + sidecar.file.size, 0),
     lastModified: file.lastModified || Date.now(),
     format: file.name.split('.').pop().toUpperCase(),
     rom: file,
+    sidecars: sidecars.map(({ file: item, virtualName }) => ({ name: item.name, virtualName, rom: item, type: item.type, lastModified: item.lastModified || 0, size: item.size })),
     systemId,
     favorite: Boolean(existing?.favorite),
     addedAt: existing?.addedAt || Date.now(),
@@ -371,6 +465,108 @@ function prettyDate(timestamp) {
   const date = new Date(timestamp);
   if (date.toDateString() === today.toDateString()) return 'JOGADO HOJE';
   return date.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' }).replace('.', '').toUpperCase();
+}
+
+const ZIP_CRC_TABLE = (() => {
+  const table = new Uint32Array(256);
+  for (let index = 0; index < table.length; index += 1) {
+    let value = index;
+    for (let bit = 0; bit < 8; bit += 1) value = (value & 1) ? (0xedb88320 ^ (value >>> 1)) : (value >>> 1);
+    table[index] = value >>> 0;
+  }
+  return table;
+})();
+
+async function crc32Blob(blob) {
+  let crc = 0xffffffff;
+  const consume = (bytes) => {
+    for (const byte of bytes) crc = ZIP_CRC_TABLE[(crc ^ byte) & 0xff] ^ (crc >>> 8);
+  };
+  if (blob.stream) {
+    const reader = blob.stream().getReader();
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      consume(value);
+    }
+  } else consume(new Uint8Array(await blob.arrayBuffer()));
+  return (crc ^ 0xffffffff) >>> 0;
+}
+
+function zipRecordHeader(signature, fixedLength, filenameBytes, configure) {
+  const header = new Uint8Array(fixedLength + filenameBytes.length);
+  const view = new DataView(header.buffer);
+  view.setUint32(0, signature, true);
+  view.setUint16(6, 0x0800, true);
+  view.setUint16(8, 0, true);
+  view.setUint16(10, 0, true);
+  view.setUint16(12, 0x21, true);
+  configure(view, filenameBytes.length);
+  header.set(filenameBytes, fixedLength);
+  return header;
+}
+
+function zipDirectoryHeader(filenameBytes, crc, size, localOffset) {
+  const header = new Uint8Array(46 + filenameBytes.length);
+  const view = new DataView(header.buffer);
+  view.setUint32(0, 0x02014b50, true);
+  view.setUint16(4, 20, true);
+  view.setUint16(6, 20, true);
+  view.setUint16(8, 0x0800, true);
+  view.setUint16(10, 0, true);
+  view.setUint16(12, 0, true);
+  view.setUint16(14, 0x21, true);
+  view.setUint32(16, crc, true);
+  view.setUint32(20, size, true);
+  view.setUint32(24, size, true);
+  view.setUint16(28, filenameBytes.length, true);
+  view.setUint16(30, 0, true);
+  view.setUint16(32, 0, true);
+  view.setUint16(34, 0, true);
+  view.setUint16(36, 0, true);
+  view.setUint32(38, 0, true);
+  view.setUint32(42, localOffset, true);
+  header.set(filenameBytes, 46);
+  return header;
+}
+
+async function buildStoredZip(entries) {
+  const output = [];
+  const directory = [];
+  let localOffset = 0;
+  for (const entry of entries) {
+    const name = safeDiscPath(entry.name);
+    const blob = entry.blob;
+    if (!name || !(blob instanceof Blob) || blob.size > 0xffffffff) throw new Error('Arquivo inválido ou maior que 4 GB.');
+    const filenameBytes = new TextEncoder().encode(name);
+    if (filenameBytes.length > 0xffff || directory.length >= 0xffff) throw new Error('O pacote tem arquivos demais para ZIP clássico.');
+    const crc = await crc32Blob(blob);
+    const localHeader = zipRecordHeader(0x04034b50, 30, filenameBytes, (view, nameLength) => {
+      view.setUint16(4, 20, true);
+      view.setUint32(14, crc, true);
+      view.setUint32(18, blob.size, true);
+      view.setUint32(22, blob.size, true);
+      view.setUint16(26, nameLength, true);
+      view.setUint16(28, 0, true);
+    });
+    const directoryHeader = zipDirectoryHeader(filenameBytes, crc, blob.size, localOffset);
+    output.push(localHeader, blob);
+    directory.push(directoryHeader);
+    localOffset += localHeader.length + blob.size;
+    if (localOffset > 0xffffffff) throw new Error('O pacote ultrapassa o limite do formato ZIP clássico.');
+  }
+  const directoryOffset = localOffset;
+  const directorySize = directory.reduce((size, header) => size + header.length, 0);
+  for (const header of directory) output.push(header);
+  const end = new Uint8Array(22);
+  const endView = new DataView(end.buffer);
+  endView.setUint32(0, 0x06054b50, true);
+  endView.setUint16(8, directory.length, true);
+  endView.setUint16(10, directory.length, true);
+  endView.setUint32(12, directorySize, true);
+  endView.setUint32(16, directoryOffset, true);
+  output.push(end);
+  return new Blob(output, { type: 'application/zip' });
 }
 
 function displayTitle(name) {
@@ -467,12 +663,28 @@ function makeGameCard(game) {
   exportRom.type = 'button';
   exportRom.title = 'Exportar arquivo do jogo';
   exportRom.setAttribute('aria-label', `Exportar ${displayTitle(game.name)}`);
-  exportRom.addEventListener('click', () => {
+  exportRom.addEventListener('click', async () => {
     if (!(game.rom instanceof Blob)) { showToast('O arquivo deste jogo não está disponível para exportação.'); return; }
-    const url = URL.createObjectURL(game.rom);
+    const sidecars = game.sidecars || [];
+    let exportBlob = game.rom;
+    let downloadName = game.name.replace(/[\\/:*?"<>|]/g, '_');
+    if (sidecars.length) {
+      showToast('Montando um ZIP com o disco e seus arquivos de faixa…');
+      try {
+        exportBlob = await buildStoredZip([
+          { name: game.name, blob: game.rom },
+          ...sidecars.map((item) => ({ name: item.virtualName || item.name, blob: item.rom })),
+        ]);
+        downloadName = `${displayTitle(game.name).replace(/[\\/:*?"<>|]/g, '_')}.zip`;
+      } catch (error) {
+        showToast(`Não foi possível montar o ZIP: ${error.message}`);
+        return;
+      }
+    }
+    const url = URL.createObjectURL(exportBlob);
     const link = document.createElement('a');
     link.href = url;
-    link.download = game.name.replace(/[\\/:*?"<>|]/g, '_');
+    link.download = downloadName;
     link.hidden = true;
     document.body.append(link);
     link.click();
@@ -497,6 +709,7 @@ function populateSettingsForm() {
   document.querySelector('#setting-filter').value = settings.filter;
   document.querySelector('#setting-controls').checked = settings.touchControls;
   document.querySelector('#setting-layout').value = settings.layout;
+  document.querySelector('#setting-pad-style').value = settings.padStyle;
   document.querySelector('#setting-haptics').checked = settings.haptics;
   document.querySelector('#setting-wake').checked = settings.keepAwake;
   document.querySelector('#setting-startup-sound').checked = settings.startupSound;
@@ -512,6 +725,7 @@ function getSettingsFromForm() {
     filter: document.querySelector('#setting-filter').value,
     touchControls: document.querySelector('#setting-controls').checked,
     layout: document.querySelector('#setting-layout').value,
+    padStyle: document.querySelector('#setting-pad-style').value,
     volume: Number(volumeInput.value),
     haptics: document.querySelector('#setting-haptics').checked,
     keepAwake: document.querySelector('#setting-wake').checked,
@@ -520,28 +734,62 @@ function getSettingsFromForm() {
   };
 }
 
-function virtualGamepadSettings() {
+function virtualGamepadSettings(systemId = selectedSystem) {
   if (!settings.touchControls) return [];
-  const controls = [{ type: 'dpad', location: 'left', left: '50%', right: '50%', joystickInput: false, inputValues: [4, 5, 6, 7] }];
-  if (settings.layout === 'six') {
-    controls.push(
-      { type: 'button', text: 'X', id: 'sixbit-x', location: 'right', left: 0, top: 0, bold: true, input_value: 9 },
-      { type: 'button', text: 'Y', id: 'sixbit-y', location: 'right', left: 48, top: 0, bold: true, input_value: 1 },
-      { type: 'button', text: 'Z', id: 'sixbit-z', location: 'right', left: 96, top: 0, bold: true, input_value: 11 },
-      { type: 'button', text: 'A', id: 'sixbit-a', location: 'right', left: 0, top: 49, bold: true, input_value: 8 },
-      { type: 'button', text: 'B', id: 'sixbit-b', location: 'right', left: 48, top: 49, bold: true, input_value: 0 },
-      { type: 'button', text: 'C', id: 'sixbit-c', location: 'right', left: 96, top: 49, bold: true, input_value: 10 },
-    );
-  } else {
-    controls.push(
-      { type: 'button', text: 'A', id: 'sixbit-a', location: 'right', left: 0, top: 24, bold: true, input_value: 8 },
-      { type: 'button', text: 'B', id: 'sixbit-b', location: 'right', left: 49, top: 0, bold: true, input_value: 0 },
-      { type: 'button', text: 'C', id: 'sixbit-c', location: 'right', left: 98, top: 24, bold: true, input_value: 10 },
-    );
-  }
-  controls.push(
-    { type: 'button', text: 'MODE', id: 'sixbit-mode', location: 'center', left: -34, fontSize: 10, block: true, input_value: 2 },
-    { type: 'button', text: 'START', id: 'sixbit-start', location: 'center', left: 30, fontSize: 10, block: true, input_value: 3 },
+  if (systemId === 'segapico') return [];
+  const sega = ['megadrive','segacd','32x'].includes(systemId);
+  const faceProfiles = {
+    nes: [['B',0],['A',8]], gb: [['B',0],['A',8]], gbc: [['B',0],['A',8]],
+    mastersystem: [['1',0],['2',8]], gamegear: [['1',0],['2',8]], sg1000: [['1',0],['2',8]],
+    atari2600: [['B',0],['A',8]], atari5200: [['B',0],['A',8]], atari7800: [['B',0],['A',8]],
+    lynx: [['B',0],['A',8]], coleco: [['1',0],['2',8]],
+    snes: [['B',0],['A',8],['Y',1],['X',9],['L',10],['R',11]],
+    gba: [['B',0],['A',8],['Y',1],['X',9],['L',10],['R',11]],
+    nds: [['B',0],['A',8],['Y',1],['X',9],['L',10],['R',11]],
+    ps1: [['○',0],['×',8],['△',1],['□',9],['L1',10],['R1',11]],
+    psp: [['○',0],['×',8],['△',1],['□',9],['L',10],['R',11]],
+    saturn: [['B',0],['A',8],['Y',1],['X',9],['L',10],['R',11]],
+    dreamcast: [['B',0],['A',8],['Y',1],['X',9],['L',10],['R',11]],
+    n64: [['A',8],['B',0],['C↑',1],['C←',9],['L',10],['R',11]],
+    arcade: [['A',8],['B',0],['C',10],['D',9],['E',1],['F',11]],
+    mame2003: [['A',8],['B',0],['C',10],['D',9],['E',1],['F',11]],
+    neogeo: [['A',8],['B',0],['C',10],['D',9],['E',1],['F',11]],
+  };
+  const extendedProfiles = {
+    snes: [['Y',1],['X',9],['L',10],['B',0],['A',8],['R',11]],
+    gba: [['Y',1],['X',9],['L',10],['B',0],['A',8],['R',11]],
+    nds: [['Y',1],['X',9],['L',10],['B',0],['A',8],['R',11]],
+    ps1: [['L1',10],['△',1],['R1',11],['□',9],['×',8],['○',0]],
+    psp: [['L',10],['△',1],['R',11],['□',9],['×',8],['○',0]],
+    saturn: [['L',10],['Y',1],['X',9],['B',0],['A',8],['R',11]],
+    dreamcast: [['L',10],['Y',1],['X',9],['B',0],['A',8],['R',11]],
+    n64: [['L',10],['C↑',1],['R',11],['B',0],['A',8],['C←',9]],
+  };
+  const segaFaces = settings.layout === 'six'
+    ? [['X',9],['Y',1],['Z',11],['A',8],['B',0],['C',10]]
+    : [['A',8],['B',0],['C',10]];
+  let faces = sega ? segaFaces : settings.layout === 'six'
+    ? (extendedProfiles[systemId] || faceProfiles[systemId] || [['Y',1],['X',9],['B',0],['A',8],['L',10],['R',11]])
+    : (faceProfiles[systemId] || [['B',0],['A',8]]).slice(0, 2);
+  if (settings.layout !== 'six' && ['arcade','mame2003','neogeo'].includes(systemId)) faces = faceProfiles[systemId].slice(0, 4);
+  if (systemId === 'segapico') faces = [];
+  const controls = [settings.padStyle === 'analog'
+    ? { type: 'zone', location: 'left', left: '50%', right: '50%', joystickInput: true, inputValues: [19,18,17,16], color: 'red' }
+    : { type: 'dpad', location: 'left', left: '50%', right: '50%', joystickInput: false, inputValues: [4,5,6,7] }];
+  const positions = faces.length <= 2
+    ? [[24,25],[74,25]]
+    : faces.length === 4
+      ? [[0,0],[48,0],[0,49],[48,49]]
+    : faces.length === 3
+      ? [[0,24],[48,0],[96,24]]
+      : [[0,0],[48,0],[96,0],[0,49],[48,49],[96,49]];
+  faces.forEach(([label, inputValue], index) => {
+    const [left, top] = positions[index];
+    controls.push({ type: 'button', text: label, id: `sixbit-face-${index}`, location: 'right', left, top, bold: true, input_value: inputValue });
+  });
+  if (systemId !== 'segapico') controls.push(
+    { type: 'button', text: sega ? 'MODE' : 'SELECT', id: 'sixbit-select', location: 'center', left: -39, fontSize: 10, block: true, input_value: 2 },
+    { type: 'button', text: 'START', id: 'sixbit-start', location: 'center', left: 32, fontSize: 10, block: true, input_value: 3 },
   );
   return controls;
 }
@@ -660,7 +908,7 @@ function openSelectedExternalSystem() {
     : 'O player de PS2 abre em outra página; selecione o jogo e a BIOS por lá.');
 }
 
-async function launchGame(file, record = null, soundAlreadyPlayed = false) {
+async function launchGame(file, record = null, soundAlreadyPlayed = false, selectedSidecars = []) {
   const systemId = record?.systemId || systemForFile(file);
   const system = SYSTEMS[systemId] || SYSTEMS.megadrive;
   if (!supportsSystemGame(file, systemId)) {
@@ -683,6 +931,8 @@ async function launchGame(file, record = null, soundAlreadyPlayed = false) {
   if (!soundAlreadyPlayed) playStartupSound();
   for (const url of currentBiosUrls) URL.revokeObjectURL(url);
   currentBiosUrls = [];
+  for (const url of currentSidecarUrls) URL.revokeObjectURL(url);
+  currentSidecarUrls = [];
   const biosKeys = system.biosKeys || (system.biosKey ? [system.biosKey] : (['segacd','saturn'].includes(systemId) ? [systemId] : []));
   const biosFiles = {};
   for (const key of biosKeys) {
@@ -727,6 +977,14 @@ async function launchGame(file, record = null, soundAlreadyPlayed = false) {
   const safeControl = JSON.stringify(system.control);
   const safeBiosUrl = JSON.stringify(biosUrls[system.biosKey || systemId] || '');
   const externalFiles = {};
+  const discSidecars = (record?.sidecars || selectedSidecars).filter((entry) => entry?.rom && entry?.virtualName);
+  for (const entry of discSidecars) {
+    const safePath = safeDiscPath(entry.virtualName);
+    if (!safePath) continue;
+    const sidecarUrl = URL.createObjectURL(entry.rom);
+    currentSidecarUrls.push(sidecarUrl);
+    externalFiles[`/${safePath}`] = sidecarUrl;
+  }
   if (biosUrls['dreamcast-boot']) externalFiles['/system/dc/dc_boot.bin'] = biosUrls['dreamcast-boot'];
   if (biosUrls['dreamcast-flash']) externalFiles['/system/dc/dc_flash.bin'] = biosUrls['dreamcast-flash'];
   if (biosUrls['nds-bios7']) externalFiles['/system/ds/bios7.bin'] = biosUrls['nds-bios7'];
@@ -737,7 +995,7 @@ async function launchGame(file, record = null, soundAlreadyPlayed = false) {
   // not be active yet on a first launch, while these files ship with the app.
   const safeDataPath = JSON.stringify(new URL('ejs-data/', APP_BASE_URL).href);
   const safeLoaderUrl = JSON.stringify(new URL('ejs-data/loader.js', APP_BASE_URL).href);
-  const virtualPad = JSON.stringify(systemId === 'megadrive' ? virtualGamepadSettings() : (settings.touchControls ? null : []));
+  const virtualPad = JSON.stringify(virtualGamepadSettings(systemId));
   const volume = Math.min(100, Math.max(0, settings.volume)) / 100;
 
   playerView.hidden = false;
@@ -763,12 +1021,13 @@ async function launchGame(file, record = null, soundAlreadyPlayed = false) {
     <style>
       html,body,#game{width:100%;height:100%;margin:0;background:#000;overflow:hidden}
       body{touch-action:none}
-      [id^="sixbit-a"],[id^="sixbit-b"],[id^="sixbit-c"],[id^="sixbit-x"],[id^="sixbit-y"],[id^="sixbit-z"]{background:radial-gradient(circle at 35% 25%,#f17858,#a92820)!important;border:2px solid #701b16!important;border-radius:50%!important;color:#fff!important;box-shadow:inset 0 1px 2px #ffb09a,0 2px 5px #0009!important}
-      [id^="sixbit-mode"],[id^="sixbit-start"]{background:linear-gradient(#a7a99c,#55584d)!important;border:1px solid #33352d!important;border-radius:8px!important;color:#171811!important}
+      [id^="sixbit-face-"]{background:radial-gradient(circle at 35% 25%,#f17858,#a92820)!important;border:2px solid #701b16!important;border-radius:50%!important;color:#fff!important;box-shadow:inset 0 1px 2px #ffb09a,0 2px 5px #0009!important}
+      [id^="sixbit-select"],[id^="sixbit-start"]{background:linear-gradient(#a7a99c,#55584d)!important;border:1px solid #33352d!important;border-radius:8px!important;color:#171811!important}
     </style></head>
     <body><div id="game"></div><script>
       window.EJS_player = '#game';
       window.EJS_core = ${safeCore};
+      window.EJS_gameID = ${emulatorGameId(file, systemId)};
       window.EJS_gameUrl = ${safeRomUrl};
       window.EJS_gameName = ${safeGameName};
       window.EJS_pathtodata = ${safeDataPath};
@@ -811,7 +1070,7 @@ function showPlayerError(message) {
   showToast(message);
 }
 
-async function openGameFile(file) {
+async function openGameFile(file, selectedFiles = [file]) {
   if (SYSTEMS[selectedSystem]?.kind === 'external') {
     openSelectedExternalSystem();
     return;
@@ -825,6 +1084,11 @@ async function openGameFile(file) {
     showToast(`O formato .${fileExtension(file)} não é compatível com ${SYSTEMS[systemId]?.name || 'o sistema selecionado'}.`);
     return;
   }
+  const bundle = await resolveDiscBundle(file, selectedFiles);
+  if (bundle.missing.length) {
+    showToast(`Faltam arquivos do disco: ${bundle.missing.slice(0, 2).join(', ')}. Selecione junto com a CUE ou importe um ZIP.`);
+    return;
+  }
   const requestedSystem = SYSTEMS[systemId];
   if ((requestedSystem.threaded || requestedSystem.requiresIsolation) && !window.crossOriginIsolated) {
     showToast(`${requestedSystem.name} precisa de isolamento entre origens. Atualize a página depois que o app terminar de configurar o núcleo.`);
@@ -833,12 +1097,12 @@ async function openGameFile(file) {
   playStartupSound();
   let record = null;
   try {
-    record = await saveGameFile(file, systemId);
+    record = await saveGameFile(file, systemId, bundle.sidecars);
     await renderLibrary();
   } catch {
     showToast('A ROM vai abrir, mas não foi possível guardá-la na biblioteca. Confira o espaço disponível.');
   }
-  await launchGame(file, record, true);
+  await launchGame(file, record, true, bundle.sidecars);
 }
 
 async function playFromLibrary(id, soundAlreadyPlayed = false) {
@@ -864,20 +1128,38 @@ async function importFiles(files) {
     return;
   }
   const selected = Array.from(files || []);
-  const supported = selected.filter(supportsGame);
+  const supported = selected.filter(supportsGame).sort((a, b) => {
+    const discPriority = (file) => ['m3u','cue','gdi','ccd'].indexOf(fileExtension(file));
+    const left = discPriority(a); const right = discPriority(b);
+    return (left < 0 ? 10 : left) - (right < 0 ? 10 : right);
+  });
   const ignored = selected.length - supported.length;
   if (!supported.length) {
     showToast('Não encontrei ROMs compatíveis nos arquivos selecionados.');
     return;
   }
   let saved = 0;
+  let failed = 0;
+  const incompleteDiscs = [];
+  const importedNames = new Set();
   for (const file of supported) {
-    try { await saveGameFile(file, systemForFile(file)); saved += 1; } catch { /* Continue importing the remaining ROMs. */ }
+    if (importedNames.has(file.name.toLocaleLowerCase())) continue;
+    const bundle = await resolveDiscBundle(file, selected);
+    if (bundle.missing.length) {
+      importedNames.add(file.name.toLocaleLowerCase());
+      incompleteDiscs.push(`${file.name}: ${bundle.missing.slice(0, 2).join(', ')}`);
+      continue;
+    }
+    try {
+      await saveGameFile(file, systemForFile(file), bundle.sidecars);
+      saved += 1;
+      for (const sidecar of bundle.sidecars) importedNames.add(sidecar.file.name.toLocaleLowerCase());
+    } catch { failed += 1; /* Continue importing the remaining ROMs. */ }
   }
   await renderLibrary();
-  showToast(saved === supported.length
-    ? `${saved} ${saved === 1 ? 'jogo adicionado' : 'jogos adicionados'} à biblioteca${ignored ? ` · ${ignored} ignorado(s)` : ''}.`
-    : `${saved} de ${supported.length} arquivos foram salvos. Confira o espaço do aparelho.`);
+  if (incompleteDiscs.length) showToast(`Mídia incompleta: ${incompleteDiscs[0]}. Selecione também os arquivos de faixa ou use um ZIP.`);
+  else if (failed) showToast(`${saved} jogos adicionados; ${failed} não puderam ser salvos. Confira o espaço do aparelho.`);
+  else showToast(`${saved} ${saved === 1 ? 'jogo adicionado' : 'jogos adicionados'} à biblioteca${ignored ? ` · ${ignored} ignorado(s)` : ''}.`);
 }
 
 async function closePlayer() {
@@ -897,6 +1179,8 @@ async function closePlayer() {
   mount.hidden = true;
   if (currentObjectUrl) URL.revokeObjectURL(currentObjectUrl);
   currentObjectUrl = null;
+  for (const url of currentSidecarUrls) URL.revokeObjectURL(url);
+  currentSidecarUrls = [];
   for (const url of currentBiosUrls) URL.revokeObjectURL(url);
   currentBiosUrls = [];
   currentRecordId = null;
@@ -1008,8 +1292,10 @@ async function refreshDeveloperPanel() {
   const diagnostics = [
     ['Versão do app', CURRENT_VERSION], ['Sistema selecionado', SYSTEMS[selectedSystem]?.name || selectedSystem],
     ['Núcleo atual', SYSTEMS[selectedSystem]?.core || 'player externo'],
+    ['Runtime EmulatorJS', '4.2.3 · arquivos locais'],
     ['Núcleos integrados', `${Object.values(SYSTEMS).filter((system) => system.kind !== 'external').length}`],
     ['WebAssembly', typeof WebAssembly === 'object' ? 'Disponível' : 'Indisponível'], ['Gráficos', graphics],
+    ['API de controle', typeof navigator.getGamepads === 'function' ? 'Gamepad disponível' : 'Gamepad indisponível'],
     ['Threads isoladas', window.crossOriginIsolated ? 'Disponíveis' : 'Indisponíveis nesta origem'],
     ['Armazenamento do app', storage], ['Service worker', 'serviceWorker' in navigator ? 'Disponível' : 'Indisponível'],
     ['Memória do aparelho', navigator.deviceMemory ? `aprox. ${navigator.deviceMemory} GB` : 'Não informada'],
@@ -1040,9 +1326,10 @@ async function requestWakeLock() {
 
 chooseButton.addEventListener('click', () => SYSTEMS[selectedSystem]?.kind === 'external' ? openSelectedExternalSystem() : fileInput.click());
 fileInput.addEventListener('change', async (event) => {
-  const [file] = event.target.files;
+  const files = Array.from(event.target.files || []);
   event.target.value = '';
-  if (file) await openGameFile(file);
+  const file = selectPrimaryRom(files);
+  if (file) await openGameFile(file, files);
 });
 libraryImportButton.addEventListener('click', () => SYSTEMS[selectedSystem]?.kind === 'external' ? openSelectedExternalSystem() : libraryInput.click());
 document.querySelector('#empty-import').addEventListener('click', () => SYSTEMS[selectedSystem]?.kind === 'external' ? openSelectedExternalSystem() : libraryInput.click());
@@ -1105,6 +1392,7 @@ settingsForm.addEventListener('submit', (event) => {
   settingsDialog.close('save');
   const restartNeeded = settings.touchControls !== previous.touchControls
     || settings.layout !== previous.layout
+    || settings.padStyle !== previous.padStyle
     || settings.volume !== previous.volume
     || settings.devMode !== previous.devMode;
   showToast(restartNeeded
@@ -1144,7 +1432,7 @@ window.addEventListener('message', async (event) => {
     const firstStart = !gameRunning;
     gameRunning = true;
     playerStatus.textContent = 'EM EXECUÇÃO';
-    controlHint.textContent = 'A/B/C · CONTROLE · TECLADO';
+    controlHint.textContent = 'TOQUE · TECLADO · CONTROLE BLUETOOTH';
     await requestWakeLock();
     if (firstStart && currentRecordId) {
       try {
@@ -1157,7 +1445,11 @@ window.addEventListener('message', async (event) => {
         }
       } catch { /* A running game does not depend on the library stats. */ }
     }
-  } else if (event.data?.type === 'sixteenbit-runtime-error') rememberAppError(`EmulatorJS · ${event.data.message}`);
+  } else if (event.data?.type === 'sixteenbit-runtime-error') {
+    const message = `EmulatorJS · ${String(event.data.message || 'falha no núcleo').slice(0, 160)}`;
+    rememberAppError(message);
+    if (playerStatus.textContent.startsWith('PREPARANDO ')) showPlayerError(`Falha ao carregar o núcleo: ${String(event.data.message || 'erro desconhecido').slice(0, 140)}`);
+  }
   else if (event.data?.type === 'sixteenbit-load-error') showPlayerError('Não foi possível abrir ejs-data/loader.js, que acompanha o app. Feche e reabra o emulador.');
 });
 
@@ -1204,12 +1496,17 @@ document.addEventListener('drop', async (event) => {
   dragDepth = 0;
   document.body.classList.remove('is-dragging');
   const files = Array.from(event.dataTransfer.files);
+  const primary = selectPrimaryRom(files);
   await importFiles(files);
-  if (SYSTEMS[selectedSystem]?.kind !== 'external' && files.length === 1 && supportsGame(files[0])) await playFromLibrary(gameId(files[0], systemForFile(files[0])));
+  if (SYSTEMS[selectedSystem]?.kind !== 'external' && primary) {
+    const bundle = await resolveDiscBundle(primary, files);
+    if (!bundle.missing.length) await playFromLibrary(gameId(primary, systemForFile(primary), bundle.sidecars));
+  }
 });
 
 window.addEventListener('pagehide', () => {
   if (currentObjectUrl) URL.revokeObjectURL(currentObjectUrl);
+  for (const url of currentSidecarUrls) URL.revokeObjectURL(url);
   for (const url of currentBiosUrls) URL.revokeObjectURL(url);
   wakeLock?.release?.();
 });
@@ -1233,7 +1530,7 @@ function renderSystemPicker() {
   document.querySelector('#system-picker-count').textContent = `${entries.length} sistemas · ${Object.values(SYSTEMS).filter((system) => system.kind !== 'external').length} integrados`;
   pickerResults.innerHTML = entries.map(([id, system]) => {
     const external = system.kind === 'external';
-    const badge = external ? 'EXTERNO' : (system.keyboard ? 'TECLADO' : (system.threaded ? 'DESEMPENHO' : (system.biosKey || system.biosKeys ? 'BIOS' : 'INTEGRADO')));
+  const badge = external ? 'EXTERNO' : (system.experimental ? 'EXPERIMENTAL' : (system.keyboard ? 'TECLADO' : (system.threaded ? 'DESEMPENHO' : (system.biosKey || system.biosKeys ? 'BIOS' : 'INTEGRADO'))));
     return `<button type="button" class="picker-system${selectedSystem === id ? ' is-selected' : ''}" data-picker-system="${id}" aria-pressed="${selectedSystem === id}"><span class="picker-system-top"><span class="picker-system-icon" aria-hidden="true">${external ? '↗' : (system.core ? '▣' : '◈')}</span><span class="picker-badge${external ? ' is-external' : ''}">${badge}</span></span><strong>${system.name}</strong><small>${SYSTEM_SUMMARIES[id] || (external ? 'Abre uma solução externa' : 'Núcleo EmulatorJS')}</small></button>`;
   }).join('') || '<p class="picker-empty">Nenhum sistema encontrado. Tente outro nome.</p>';
 }
@@ -1288,6 +1585,7 @@ for (const [inputId, key, statusId] of [
   ['setting-dc-flash-bios','dreamcast-flash','dc-flash-bios-status'],
   ['setting-amiga-bios','amiga','amiga-bios-status'],
   ['setting-pcfx-bios','pcfx','pcfx-bios-status'],
+  ['setting-pcecd-bios','pcecd','pcecd-bios-status'],
 ]) {
   const input = document.querySelector(`#${inputId}`);
   input.addEventListener('change', async () => {
@@ -1327,7 +1625,8 @@ Promise.all([
   biosRequest('readonly','get','dreamcast-flash'),
   biosRequest('readonly','get','amiga'),
   biosRequest('readonly','get','pcfx'),
-]).then(([ps1,cd,saturn,master,gear,gb,gbc,gba,ndsBios7,ndsBios9,ndsFirmware,bios3do,biosColeco,biosLynx,biosAtari7800,dcBoot,dcFlash,amiga,pcfx]) => {
+  biosRequest('readonly','get','pcecd'),
+]).then(([ps1,cd,saturn,master,gear,gb,gbc,gba,ndsBios7,ndsBios9,ndsFirmware,bios3do,biosColeco,biosLynx,biosAtari7800,dcBoot,dcFlash,amiga,pcfx,pcecd]) => {
   if (ps1) document.querySelector('#ps1-bios-status').textContent = 'BIOS do PS1 salva neste aparelho';
   if (cd) document.querySelector('#segacd-bios-status').textContent = 'BIOS do Sega CD salva neste aparelho';
   if (saturn) document.querySelector('#saturn-bios-status').textContent = 'BIOS do Saturn salva neste aparelho';
@@ -1347,6 +1646,7 @@ Promise.all([
   if (dcFlash) document.querySelector('#dc-flash-bios-status').textContent = 'dc_flash.bin salvo neste aparelho';
   if (amiga) document.querySelector('#amiga-bios-status').textContent = 'Kickstart salvo neste aparelho';
   if (pcfx) document.querySelector('#pcfx-bios-status').textContent = 'BIOS do PC-FX salva neste aparelho';
+  if (pcecd) document.querySelector('#pcecd-bios-status').textContent = 'BIOS de CD da PC Engine salva neste aparelho';
 }).catch(() => {});
 applyLiveSettings();
 populateSettingsForm();

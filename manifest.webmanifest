@@ -1,7 +1,7 @@
 {
   "name": "16-Bit Arcade — Emulador multi-sistema",
   "short_name": "16-Bit",
-  "description": "Emulador retrô multi-sistema com Atari 8-bit, ZX Spectrum, Amstrad CPC, Doom e teclado virtual para computador e celular.",
+  "description": "Emulador retrô multi-sistema com SG-1000, Sega Pico, Neo Geo, sistemas NEC, núcleos locais e controles configuráveis para celular e computador.",
   "lang": "pt-BR",
   "start_url": "./",
   "scope": "./",

@@ -1,0 +1,8 @@
+{
+  "runtimeVersion": "4.2.3",
+  "source": "https://cdn.emulatorjs.org/4.2.3/data/",
+  "assets": [
+    { "path": "emulator.min.js", "sha256": "6aec3fd7bb2721255801b0a6af02e47e78b05e28a1822b1f213aacbd348abaee", "size": 426343 },
+    { "path": "emulator.min.css", "sha256": "16406c60b2dc3b04ae9b115e308613e6f567a0cc7068e21d9d0c1e5030fb395e", "size": 25630 }
+  ]
+}
