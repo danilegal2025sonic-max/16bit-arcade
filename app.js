@@ -77,7 +77,7 @@ const SYSTEMS = {
   amstradcpc: { name: 'Amstrad CPC', core: 'cap32', keyboard: true, extensions: ['dsk','sna','cdt','cpr','voc','zip','7z'] },
   doom: { name: 'Doom (PrBoom)', core: 'prboom', keyboard: true, extensions: ['wad','zip','7z'] },
 };
-const CURRENT_VERSION = '5.0.0';
+const CURRENT_VERSION = '5.1.0';
 const SYSTEM_KEY = 'sixteenbit-system-v1';
 
 const DB_NAME = 'sixbit-local-library';
@@ -1364,8 +1364,124 @@ async function refreshDeveloperPanel() {
     item.append(heading, result); return item;
   }));
   document.querySelector('#setting-dev-debug').checked = Boolean(settings.devMode);
+  document.querySelector('#developer-vm-card').hidden = !settings.devMode;
   document.querySelector('#developer-log').textContent = recentAppErrors.length ? recentAppErrors.join('\n') : 'Nenhum erro registrado nesta sessão.';
   return Object.fromEntries(diagnostics);
+}
+
+let windowsVm = null;
+let windowsVmDiskUrl = '';
+let windowsVmCdUrl = '';
+const windowsVmDialog = document.querySelector('#developer-vm-dialog');
+const windowsVmScreen = document.querySelector('#windows-vm-screen');
+const windowsVmStatus = document.querySelector('#windows-vm-status');
+const windowsVmStartButton = document.querySelector('#windows-vm-start');
+const windowsVmRestartButton = document.querySelector('#windows-vm-restart');
+const windowsVmStopButton = document.querySelector('#windows-vm-stop');
+const windowsVmFullscreenButton = document.querySelector('#windows-vm-fullscreen');
+
+function setWindowsVmStatus(message) {
+  windowsVmStatus.textContent = message;
+}
+
+function updateWindowsVmButtons(state) {
+  windowsVmStartButton.disabled = state === 'loading' || state === 'running';
+  windowsVmRestartButton.disabled = state !== 'running';
+  windowsVmStopButton.disabled = state === 'stopped';
+  windowsVmFullscreenButton.disabled = state !== 'running';
+}
+
+async function stopWindowsVm() {
+  const vm = windowsVm;
+  windowsVm = null;
+  if (vm) {
+    try { await vm.stop(); } catch { /* A VM may stop itself after a guest shutdown. */ }
+    try { await vm.destroy(); } catch { /* Cleanup continues for the selected file handles. */ }
+  }
+  if (windowsVmDiskUrl) URL.revokeObjectURL(windowsVmDiskUrl);
+  if (windowsVmCdUrl) URL.revokeObjectURL(windowsVmCdUrl);
+  windowsVmDiskUrl = '';
+  windowsVmCdUrl = '';
+  updateWindowsVmButtons('stopped');
+}
+
+async function startWindowsVm() {
+  if (!settings.devMode) {
+    showToast('Ative o modo de desenvolvedor para abrir o PC virtual.');
+    return;
+  }
+  const disk = document.querySelector('#windows-vm-disk').files?.[0];
+  const cd = document.querySelector('#windows-vm-cd').files?.[0];
+  if (!disk) {
+    setWindowsVmStatus('Selecione primeiro uma imagem RAW inicializável com Windows XP.');
+    return;
+  }
+  const maxImageSize = 3 * 1024 * 1024 * 1024;
+  if (disk.size < 512 * 1024 || disk.size > maxImageSize || (cd && cd.size > maxImageSize)) {
+    setWindowsVmStatus('Imagem inválida ou maior que o limite experimental de 3 GB por arquivo.');
+    return;
+  }
+
+  await stopWindowsVm();
+  const screenText = windowsVmScreen.querySelector('.vm-screen-text');
+  const screenCanvas = windowsVmScreen.querySelector('.vm-screen-canvas');
+  screenText.textContent = '';
+  screenCanvas.width = 0;
+  screenCanvas.height = 0;
+  screenCanvas.style.display = 'none';
+  windowsVmDiskUrl = URL.createObjectURL(disk);
+  if (cd) windowsVmCdUrl = URL.createObjectURL(cd);
+  updateWindowsVmButtons('loading');
+  setWindowsVmStatus('Carregando runtime local e imagem de disco…');
+
+  try {
+    const { V86 } = await import(new URL('v86/build/libv86.mjs', APP_BASE_URL).href);
+    const options = {
+      wasm_path: new URL('v86/build/v86.wasm', APP_BASE_URL).href,
+      memory_size: Number(document.querySelector('#windows-vm-memory').value) * 1024 * 1024,
+      vga_memory_size: 8 * 1024 * 1024,
+      screen_container: windowsVmScreen,
+      bios: { url: new URL('v86/bios/seabios.bin', APP_BASE_URL).href },
+      vga_bios: { url: new URL('v86/bios/vgabios.bin', APP_BASE_URL).href },
+      hda: { url: windowsVmDiskUrl, async: true, size: disk.size },
+      acpi: false,
+      cpuid_level: 2,
+      autostart: false,
+    };
+    if (cd && windowsVmCdUrl) options.cdrom = { url: windowsVmCdUrl, async: true, size: cd.size };
+    windowsVm = new V86(options);
+    windowsVm.add_listener('download-progress', (event) => {
+      if (event.lengthComputable && event.total > 0) {
+        const percent = Math.min(100, Math.round(event.loaded / event.total * 100));
+        setWindowsVmStatus(`Carregando ${event.file_name || 'imagem'} · ${percent}%`);
+      }
+    });
+    windowsVm.add_listener('download-error', (event) => {
+      setWindowsVmStatus(`Falha ao ler ${event.file_name || 'a imagem de disco'}. Tente uma imagem RAW local.`);
+    });
+    windowsVm.add_listener('emulator-ready', async () => {
+      try {
+        await windowsVm?.run();
+        updateWindowsVmButtons('running');
+        setWindowsVmStatus('PC virtual ligado. Toque na tela ou use as teclas rápidas abaixo.');
+      } catch (error) {
+        recentAppErrors.push(`Windows XP VM: ${error?.message || error}`);
+        setWindowsVmStatus('Não foi possível iniciar a máquina virtual neste aparelho.');
+        await stopWindowsVm();
+      }
+    });
+    windowsVm.add_listener('emulator-started', () => {
+      updateWindowsVmButtons('running');
+      setWindowsVmStatus('PC virtual em execução.');
+    });
+    windowsVm.add_listener('emulator-stopped', () => {
+      if (windowsVm) setWindowsVmStatus('Máquina pausada. Use Reiniciar para voltar ao boot.');
+    });
+  } catch (error) {
+    recentAppErrors.push(`Windows XP VM: ${error?.message || error}`);
+    await stopWindowsVm();
+    setWindowsVmStatus('Falha ao carregar o runtime x86. Confira o armazenamento livre do app.');
+  }
 }
 
 function showBiosOnlyExplanation() {
@@ -1411,16 +1527,59 @@ document.querySelector('#developer-copy').addEventListener('click', async () => 
   try { await navigator.clipboard.writeText(report); showToast('Relatório técnico copiado.'); }
   catch { showToast('A cópia não está disponível neste navegador. Tente novamente em uma origem segura.'); }
 });
+document.querySelector('#windows-vm-open').addEventListener('click', () => {
+  if (!settings.devMode) return showToast('Ative o modo de desenvolvedor primeiro.');
+  windowsVmDialog.showModal();
+});
+windowsVmStartButton.addEventListener('click', startWindowsVm);
+windowsVmRestartButton.addEventListener('click', () => {
+  if (!windowsVm) return;
+  windowsVm.restart();
+  setWindowsVmStatus('Reiniciando o PC virtual…');
+});
+windowsVmStopButton.addEventListener('click', async () => {
+  await stopWindowsVm();
+  setWindowsVmStatus('Máquina parada. O disco original não foi alterado no aparelho.');
+});
+windowsVmFullscreenButton.addEventListener('click', async () => {
+  try { await windowsVmScreen.requestFullscreen(); }
+  catch { showToast('A tela cheia não está disponível nesta janela.'); }
+});
+document.querySelectorAll('[data-vm-scancodes]').forEach((button) => button.addEventListener('click', () => {
+  if (!windowsVm) return;
+  const codes = button.dataset.vmScancodes.split(',').map((code) => Number(code));
+  windowsVm.keyboard_set_enabled(true);
+  windowsVm.keyboard_send_scancodes(codes);
+}));
+document.querySelector('#windows-vm-text-form').addEventListener('submit', (event) => {
+  event.preventDefault();
+  const input = document.querySelector('#windows-vm-text');
+  if (!windowsVm || !input.value) return;
+  windowsVm.keyboard_set_enabled(true);
+  windowsVm.keyboard_send_text(input.value);
+  input.value = '';
+  windowsVmScreen.focus();
+});
 document.querySelector('#setting-dev-debug').addEventListener('change', (event) => {
   settings.devMode = event.target.checked;
   try { localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings)); } catch { /* Debug preference still applies for this session. */ }
-  showToast(settings.devMode ? 'Logs detalhados ativos no próximo jogo.' : 'Logs detalhados desativados.');
+  document.querySelector('#developer-vm-card').hidden = !settings.devMode;
+  if (!settings.devMode && windowsVmDialog.open) {
+    void stopWindowsVm();
+    windowsVmDialog.close();
+  }
+  showToast(settings.devMode ? 'Modo de desenvolvedor ativo.' : 'Modo de desenvolvedor desativado.');
 });
 document.querySelectorAll('[data-dialog-close]').forEach((button) => button.addEventListener('click', () => document.querySelector(`#${button.dataset.dialogClose}`).close()));
-for (const dialog of [systemDescriptionsDialog, developerDialog]) {
+for (const dialog of [systemDescriptionsDialog, developerDialog, windowsVmDialog]) {
   dialog.addEventListener('click', (event) => { if (event.target === dialog) dialog.close(); });
   dialog.addEventListener('close', () => showPlayerChrome(true));
 }
+windowsVmDialog.addEventListener('close', () => {
+  void stopWindowsVm();
+  setWindowsVmStatus('Aguardando uma imagem de disco.');
+});
+window.addEventListener('pagehide', () => { void stopWindowsVm(); });
 document.querySelector('#bios-only-help').addEventListener('click', showBiosOnlyExplanation);
 fullscreenButton.addEventListener('click', toggleFullscreen);
 document.querySelector('#library-search').addEventListener('input', renderLibrary);
@@ -1454,7 +1613,7 @@ settingsForm.addEventListener('submit', (event) => {
     || settings.volume !== previous.volume
     || settings.devMode !== previous.devMode;
   showToast(restartNeeded
-    ? 'Preferências salvas. Controles, volume e logs técnicos entram no próximo jogo.'
+    ? 'Preferências salvas. Controles e modo de desenvolvedor atualizados.'
     : 'Preferências salvas neste aparelho.');
   if (!settings.keepAwake) {
     wakeLock?.release?.();

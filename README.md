@@ -1,6 +1,6 @@
 # 16-Bit Arcade
 
-Emulador retrô para navegador, computador e Android. A **Ultimate Update 5.0.0** aplica identidade visual por sistema, controles de toque configuráveis e carregamento local com recuperação de núcleo pelo service worker. O APK inclui runtime e dados dos núcleos EmulatorJS; ROMs, BIOS e firmware continuam sendo escolhidos pelo usuário.
+Emulador retrô para navegador, computador e Android. A **Ultimate Update 5.1.0** adiciona uma máquina x86 v86 experimental ao menu de desenvolvedor, com tela, teclado de toque e execução local de uma imagem de disco fornecida pelo usuário. Também aplica identidade visual por sistema, controles de toque configuráveis e carregamento local com recuperação de núcleo pelo service worker. ROMs, BIOS, firmware e imagens do Windows continuam sendo escolhidos pelo usuário.
 
 ## Publicar no GitHub Pages
 
@@ -27,6 +27,7 @@ O APK, `node_modules` e arquivos temporários de build ficam fora do repositóri
 - **3.0.0** — adiciona Atari 8-bit, ZX Spectrum, Amstrad CPC e Doom; inclui núcleos alternativos para NES, Nintendo DS, Nintendo 64, PlayStation e arcade; acrescenta teclado virtual para computadores retrô e fixa as versões dos pacotes dos núcleos.
 - **4.0.0** — integra Sega SG-1000, Sega Pico experimental, Neo Geo, SuperGrafx e PC Engine CD; inclui runtime EmulatorJS minificado local para reduzir falhas de download; redesenha controles virtuais por sistema com direcional digital ou analógico; importa e salva os arquivos associados a mídias CUE/GDI/M3U; separa os saves por jogo.
 - **5.0.0 — Ultimate Update** — cria temas e arte contextual para cada família de sistemas; adiciona ajuste de tamanho e transparência aos controles de toque; combina temas dos botões e esquemas de controle por console; permite tentar novamente a inicialização após uma falha; corrige a interceptação dos caminhos locais do EmulatorJS e adiciona recuperação de arquivos pelo CDN oficial fixado na mesma versão.
+- **5.1.0 — Developer PC** — integra o runtime v86 ao APK e ao PWA; adiciona um PC virtual x86 experimental acessível pelo modo de desenvolvedor, compatibilidade com disco RAW e CD opcional, memória configurável, teclas de toque e tela cheia; inclui os arquivos de runtime necessários para uso offline, mas não inclui Windows XP nem imagens de disco.
 
 ## Sistemas integrados
 
@@ -45,6 +46,12 @@ O catálogo usa sistemas e núcleos do [EmulatorJS](https://emulatorjs.org/docs4
 Use o seletor de sistema antes de abrir formatos compartilhados, como `.bin`, `.iso`, `.cue`, `.tap`, `.sna` ou `.zip`. Para mídias `.cue`, `.gdi` ou `.m3u`, selecione junto os arquivos de faixa referenciados; eles ficam guardados como parte do jogo. A extensão de uma ROM compactada não identifica sozinha o console. Os sistemas de computador mostram um botão de teclado virtual no player; mantenha uma tecla pressionada na tela para sustentar a entrada.
 
 PS1, Sega CD e Saturn podem exigir BIOS. Nintendo DS com melonDS exige `bios7.bin`, `bios9.bin` e `firmware.bin`. 3DO e ColecoVision exigem BIOS. Atari 7800 e Lynx podem usar arquivos de sistema para compatibilidade. Dreamcast funciona melhor com `dc_boot.bin` e `dc_flash.bin`; Amiga pode precisar de Kickstart; PC-FX pode precisar de BIOS; jogos de CD da PC Engine podem exigir BIOS de CD. Os campos ficam em Configurações; os arquivos permanecem neste aparelho.
+
+### PC virtual Windows XP experimental
+
+Ative **Configurações → Menu de desenvolvedor → Modo de desenvolvedor → Abrir PC virtual**. A primeira versão aceita um disco RAW inicializável com Windows XP já instalado (`.img`, `.hdd` ou `.bin`); uma ISO pode ser ligada como CD opcional. O runtime v86 e o BIOS aberto já vêm no app, mas o Windows e a imagem de disco não. O disco funciona como sessão temporária e as alterações não são gravadas no arquivo quando a máquina é parada. A imagem precisa usar o perfil **Standard PC** descrito pelo v86; algumas instalações de XP não inicializam. No Galaxy A15, comece com 256 MB de memória virtual; desempenho e compatibilidade do XP são experimentais.
+
+PS2 e PS Vita ainda dependem das soluções externas exibidas no catálogo. Xbox e Xbox 360 continuam sem núcleo integrado neste app. O menu de desenvolvedor mostra esses estados para não confundir atalho com emulação local.
 
 Arcade, DOSBox, 3DO, Saturn, N64, PSP e Dreamcast podem exigir bastante desempenho e espaço. A compatibilidade varia conforme o jogo e o aparelho. Doom precisa de um arquivo WAD compatível, fornecido pelo usuário. O app não fornece jogos, ROMs, BIOS ou firmware.
 
@@ -78,4 +85,4 @@ O APK de depuração aparece em `android/app/build/outputs/apk/debug/app-debug.a
 
 ## Avisos de terceiros
 
-Atribuições, metadados de licença e repositórios dos núcleos estão em [ejs-data/THIRD_PARTY_NOTICES.md](ejs-data/THIRD_PARTY_NOTICES.md) e `ejs-data/cores/licenses/`. O app não distribui jogos comerciais, ROMs, BIOS ou firmware.
+O runtime v86 é distribuído sob BSD-2-Clause. O SeaBIOS e o VGA BIOS incluídos usam as licenças GPL-3.0/LGPL-3.0; avisos, textos de licença e referências ao código-fonte acompanham o app em `v86/` e também estão em `third_party/v86-0.5.473/`. Atribuições, metadados de licença e repositórios dos núcleos estão em [ejs-data/THIRD_PARTY_NOTICES.md](ejs-data/THIRD_PARTY_NOTICES.md) e `ejs-data/cores/licenses/`. O app não distribui jogos comerciais, ROMs ou imagens do Windows.

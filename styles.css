@@ -412,9 +412,10 @@ html:fullscreen .player-footer, html:-webkit-full-screen .player-footer { flex-b
 .settings-tools strong { color: var(--ink); font-size: 9px; font-weight: 600; }
 .settings-tools small { margin-top: 4px; color: var(--muted); font-size: 7px; }
 .bios-only-help { margin: 8px 0 3px; padding: 0; border: 0; background: transparent; color: var(--accent); cursor: pointer; font-size: 8px; text-align: left; text-decoration: underline; text-underline-offset: 3px; }
-.system-descriptions-dialog, .developer-dialog { width: min(780px,calc(100vw - 22px)); max-width: none; max-height: min(92dvh,850px); padding: 0; overflow: hidden; border: 1px solid var(--line-bright); border-radius: 12px; background: #11131a; color: var(--ink); box-shadow: 0 30px 110px #000c; }
-.system-descriptions-dialog::backdrop, .developer-dialog::backdrop { background: #05060be8; backdrop-filter: blur(8px); }
-.descriptions-panel, .developer-panel { display: flex; flex-direction: column; max-height: min(92dvh,850px); padding: clamp(16px,4vw,26px); }
+.system-descriptions-dialog, .developer-dialog, .developer-vm-dialog { width: min(780px,calc(100vw - 22px)); max-width: none; max-height: min(92dvh,850px); padding: 0; overflow: hidden; border: 1px solid var(--line-bright); border-radius: 12px; background: #11131a; color: var(--ink); box-shadow: 0 30px 110px #000c; }
+.system-descriptions-dialog::backdrop, .developer-dialog::backdrop, .developer-vm-dialog::backdrop { background: #05060be8; backdrop-filter: blur(8px); }
+.descriptions-panel, .developer-panel, .vm-panel { display: flex; flex-direction: column; max-height: min(92dvh,850px); padding: clamp(16px,4vw,26px); }
+.developer-panel, .vm-panel { overflow-y: auto; overscroll-behavior: contain; }
 .descriptions-panel .settings-heading, .developer-panel .settings-heading { flex: 0 0 auto; margin-bottom: 15px; }
 .descriptions-panel h2, .developer-panel h2 { margin: 0; font-size: clamp(20px,5vw,28px); letter-spacing: -.055em; }
 .descriptions-list { flex: 1 1 auto; min-height: 0; margin-top: 13px; overflow-y: auto; overscroll-behavior: contain; }
@@ -441,4 +442,43 @@ html:fullscreen .player-footer, html:-webkit-full-screen .player-footer { flex-b
 .developer-log { max-height: 110px; min-height: 45px; margin: 7px 0 0; padding: 9px; overflow: auto; border: 1px solid var(--line); border-radius: 5px; background: #08090d; color: #b4b9c8; font: 7px/1.5 var(--mono); white-space: pre-wrap; overflow-wrap: anywhere; }
 .developer-actions { display: flex; flex: 0 0 auto; justify-content: flex-end; gap: 8px; margin-top: 12px; }
 .developer-actions button { min-height: 36px; padding: 0 11px; font-size: 8px; }
+.developer-vm-card { display: flex; flex: 0 0 auto; align-items: center; justify-content: space-between; gap: 10px; margin-top: 9px; padding: 11px; border: 1px solid rgba(var(--accent-rgb),.35); border-radius: 6px; background: rgba(var(--accent-rgb),.045); }
+.developer-vm-card[hidden] { display: none; }
+.developer-vm-card strong, .developer-vm-card small { display: block; }
+.developer-vm-card strong { font-size: 9px; }
+.developer-vm-card small { max-width: 430px; margin-top: 4px; color: var(--muted); font-size: 7px; line-height: 1.5; }
+.developer-vm-card button { min-height: 34px; flex: 0 0 auto; padding: 0 10px; font-size: 8px; }
+.developer-compatibility { flex: 0 0 auto; margin-top: 11px; }
+.developer-compatibility-heading strong, .developer-compatibility-heading small { display: block; }
+.developer-compatibility-heading strong { font-size: 9px; }
+.developer-compatibility-heading small { margin-top: 3px; color: var(--muted); font-size: 7px; }
+.compatibility-list { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 5px; margin-top: 7px; }
+.compatibility-list > div { min-width: 0; padding: 7px 8px; border: 1px solid var(--line); border-radius: 5px; background: #ffffff04; }
+.compatibility-list b { display: block; margin-bottom: 3px; color: var(--accent); font: 7px var(--mono); }
+.compatibility-list span { display: block; color: var(--muted); font-size: 7px; line-height: 1.4; }
+.vm-panel .settings-heading { flex: 0 0 auto; margin-bottom: 8px; }
+.vm-panel h2 { margin: 0; font-size: clamp(20px,5vw,28px); letter-spacing: -.055em; }
+.vm-intro { flex: 0 0 auto; margin: 0 0 10px; color: var(--muted); font-size: 8px; line-height: 1.55; }
+.vm-file-row, .vm-memory-row { display: flex; flex: 0 0 auto; align-items: center; justify-content: space-between; gap: 10px; min-height: 49px; margin-top: 7px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 6px; background: #ffffff04; }
+.vm-file-row strong, .vm-file-row small, .vm-memory-row strong, .vm-memory-row small { display: block; }
+.vm-file-row strong, .vm-memory-row strong { font-size: 8px; }
+.vm-file-row small, .vm-memory-row small { margin-top: 3px; color: var(--muted); font-size: 7px; }
+.vm-file-row input { max-width: min(55%,280px); color: var(--muted); font-size: 7px; }
+.vm-memory-row select { min-height: 32px; padding: 0 8px; border: 1px solid var(--line); border-radius: 5px; background: #151720; color: var(--ink); font-size: 8px; }
+.vm-actions { display: flex; flex: 0 0 auto; flex-wrap: wrap; gap: 6px; margin-top: 9px; }
+.vm-actions button { min-height: 34px; flex: 1 1 auto; padding: 0 9px; font-size: 8px; }
+.vm-actions button:disabled { opacity: .45; cursor: default; }
+.vm-status { flex: 0 0 auto; margin: 8px 0; color: var(--accent); font: 7px var(--mono); line-height: 1.5; }
+.vm-screen-wrap { flex: 0 0 auto; min-height: 160px; overflow: auto; border: 1px solid var(--line-bright); border-radius: 6px; background: #000; }
+.vm-screen { min-width: 320px; min-height: 160px; color: #ddd; outline: none; touch-action: none; }
+.vm-screen-text { padding: 5px; color: #ddd; font: 11px/1.1 monospace; white-space: pre; }
+.vm-screen-canvas { display: block; max-width: 100%; height: auto; margin: 0 auto; image-rendering: pixelated; }
+.vm-keyboard { display: flex; flex: 0 0 auto; flex-wrap: wrap; gap: 5px; margin-top: 8px; }
+.vm-keyboard button { min-height: 34px; flex: 1 1 auto; padding: 0 9px; border: 1px solid var(--line); border-radius: 5px; background: #ffffff08; color: var(--ink); font-size: 8px; }
+.vm-text-form { flex: 0 0 auto; margin-top: 9px; }
+.vm-text-form > label { display: block; margin-bottom: 5px; color: var(--muted); font-size: 7px; }
+.vm-text-form > div { display: flex; gap: 6px; }
+.vm-text-form input { min-width: 0; flex: 1; padding: 8px 10px; border: 1px solid var(--line); border-radius: 5px; background: #090a0f; color: var(--ink); font-size: 8px; }
+.vm-text-form button { min-height: 34px; padding: 0 10px; font-size: 8px; }
 @media (max-width: 560px) { .description-cards { grid-template-columns: 1fr; } .description-card p { font-size: 8px; } .developer-grid { max-height: 30vh; } .developer-actions { justify-content: stretch; } .developer-actions button { flex: 1; } }
+@media (max-width: 560px) { .developer-vm-card { align-items: stretch; flex-direction: column; } .developer-vm-card button { width: 100%; } .compatibility-list { grid-template-columns: 1fr; } .vm-file-row { align-items: flex-start; flex-direction: column; } .vm-file-row input { max-width: 100%; } .vm-actions button { flex-basis: calc(50% - 6px); } }
