@@ -1,0 +1,1249 @@
+const homeShell = document.querySelector('#home-shell');
+const chooseButton = document.querySelector('#choose-game');
+const libraryImportButton = document.querySelector('#library-import-open');
+const fileInput = document.querySelector('#rom-file');
+const libraryInput = document.querySelector('#library-import');
+const libraryList = document.querySelector('#library-list');
+const emptyLibrary = document.querySelector('#empty-library');
+const noResults = document.querySelector('#no-results');
+const playerView = document.querySelector('#player-view');
+const playerScreen = document.querySelector('#player-screen');
+const playerLoader = document.querySelector('#player-loader');
+const playerStatus = document.querySelector('#player-status');
+const playerName = document.querySelector('#player-game-name');
+const mount = document.querySelector('#emulator-mount');
+const controlHint = document.querySelector('#control-hint');
+const toast = document.querySelector('#toast');
+const settingsDialog = document.querySelector('#settings-dialog');
+const settingsForm = document.querySelector('#settings-form');
+const volumeInput = document.querySelector('#setting-volume');
+const volumeValue = document.querySelector('#volume-value');
+const fullscreenButton = document.querySelector('#fullscreen-toggle');
+const systemSelect = document.querySelector('#system-select');
+const systemPicker = document.querySelector('#system-picker-dialog');
+const PS2_PLAYER_URL = 'https://tabstationtoo.github.io/TabStationToo/';
+const PSVITA_PLAYER_URL = 'https://vita3k.org/download.html';
+const APP_BASE_URL = new URL('.', document.baseURI);
+const SYSTEMS = {
+  megadrive: { name: 'Sega Mega Drive', core: 'segaMD', control: 'segaMD', extensions: ['md','gen','bin','smd','rom'] },
+  segacd: { name: 'Sega CD', core: 'segaCD', control: 'segaCD', extensions: ['iso','chd','zip'] },
+  '32x': { name: 'Sega 32X', core: 'sega32x', control: 'sega32x', extensions: ['32x','zip'] },
+  saturn: { name: 'Sega Saturn', core: 'segaSaturn', control: 'segaSaturn', extensions: ['iso','chd','zip'] },
+  mastersystem: { name: 'Sega Master System', core: 'segaMS', control: 'segaMS', biosKey: 'mastersystem', extensions: ['sms','bin','zip'] },
+  gamegear: { name: 'Sega Game Gear', core: 'segaGG', control: 'segaGG', biosKey: 'gamegear', extensions: ['gg','bin','zip'] },
+  gb: { name: 'Game Boy', core: 'gb', control: 'gb', biosKey: 'gb', extensions: ['gb','bin','zip'] },
+  gbc: { name: 'Game Boy Color', core: 'gb', control: 'gb', biosKey: 'gbc', extensions: ['gbc','gb','bin','zip'] },
+  gba: { name: 'Game Boy Advance', core: 'gba', control: 'gba', biosKey: 'gba', extensions: ['gba','bin','zip'] },
+  n64: { name: 'Nintendo 64', core: 'n64', control: 'n64', extensions: ['z64','n64','v64','zip'] },
+  ps1: { name: 'PlayStation (PS1)', core: 'psx', biosKey: 'ps1', extensions: ['bin','cue','chd','iso','pbp','zip'] },
+  ps2: { name: 'PlayStation 2', kind: 'external', externalUrl: PS2_PLAYER_URL, extensions: ['iso','chd','cso','zso','bin','img','zip'] },
+  psvita: { name: 'PlayStation Vita', kind: 'external', externalUrl: PSVITA_PLAYER_URL, extensions: [] },
+  psp: { name: 'PlayStation Portable (PSP)', core: 'psp', threaded: true, extensions: ['iso','cso','pbp','zip'] },
+  dreamcast: { name: 'Sega Dreamcast', core: 'flycast', customCore: true, requiresIsolation: true, biosKeys: ['dreamcast-boot','dreamcast-flash'], extensions: ['cdi','gdi','chd','cue','iso','elf','bin','zip'] },
+  nes: { name: 'Nintendo NES / Famicom', core: 'nes', control: 'nes', extensions: ['nes','unf','unif','fds','zip'] },
+  snes: { name: 'Super Nintendo / SNES', core: 'snes', control: 'snes', extensions: ['sfc','smc','fig','swc','zip'] },
+  nds: { name: 'Nintendo DS', core: 'nds', control: 'nds', biosKeys: ['nds-bios7','nds-bios9','nds-firmware'], extensions: ['nds','dsi','zip'] },
+  atari2600: { name: 'Atari 2600', core: 'atari2600', control: 'atari2600', extensions: ['a26','bin','rom','zip'] },
+  atari5200: { name: 'Atari 5200', core: 'atari5200', extensions: ['a52','bin','rom','zip'] },
+  atari7800: { name: 'Atari 7800', core: 'atari7800', control: 'atari7800', biosKey: 'atari7800', extensions: ['a78','bin','rom','zip'] },
+  lynx: { name: 'Atari Lynx', core: 'lynx', control: 'lynx', biosKey: 'lynx', extensions: ['lnx','lyx','zip'] },
+  vb: { name: 'Virtual Boy', core: 'vb', control: 'vb', extensions: ['vb','vboy','zip'] },
+  '3do': { name: '3DO', core: '3do', control: '3do', biosKey: '3do', extensions: ['iso','cue','chd','bin','zip'] },
+  coleco: { name: 'ColecoVision', core: 'coleco', biosKey: 'coleco', extensions: ['col','cv','rom','bin','zip'] },
+  pce: { name: 'PC Engine / TurboGrafx-16', core: 'pce', extensions: ['pce','sgx','cue','zip'] },
+  ngp: { name: 'Neo Geo Pocket', core: 'ngp', extensions: ['ngp','ngc','zip'] },
+  ws: { name: 'WonderSwan', core: 'ws', extensions: ['ws','wsc','zip'] },
+  arcade: { name: 'Arcade (FBNeo)', core: 'arcade', control: 'arcade', extensions: ['zip','7z'] },
+  mame2003: { name: 'Arcade (MAME 2003)', core: 'mame2003', control: 'mame', extensions: ['zip','7z'] },
+  jaguar: { name: 'Atari Jaguar', core: 'jaguar', control: 'jaguar', extensions: ['j64','jag','rom','zip'] },
+  dos: { name: 'PC MS-DOS', core: 'dos', threaded: true, extensions: ['zip','7z'] },
+  c64: { name: 'Commodore 64', core: 'c64', extensions: ['d64','t64','tap','crt','prg','p00','zip'] },
+  c128: { name: 'Commodore 128', core: 'c128', extensions: ['d64','d71','d81','tap','crt','prg','zip'] },
+  pet: { name: 'Commodore PET', core: 'pet', extensions: ['prg','p00','crt','zip'] },
+  plus4: { name: 'Commodore Plus/4', core: 'plus4', extensions: ['prg','p00','tap','d64','zip'] },
+  vic20: { name: 'Commodore VIC-20', core: 'vic20', extensions: ['prg','p00','crt','tap','zip'] },
+  amiga: { name: 'Commodore Amiga', core: 'amiga', biosKey: 'amiga', extensions: ['adf','adz','dms','ipf','lha','zip'] },
+  pcfx: { name: 'NEC PC-FX', core: 'pcfx', biosKey: 'pcfx', extensions: ['cue','chd','iso','zip'] },
+};
+const CURRENT_VERSION = '2.2.2';
+const SYSTEM_KEY = 'sixteenbit-system-v1';
+
+const DB_NAME = 'sixbit-local-library';
+const DB_VERSION = 2;
+const SETTINGS_KEY = 'sixteenbit-settings-v3';
+const SUPPORTED_EXTENSIONS = [...new Set(Object.values(SYSTEMS).flatMap((system) => system.extensions))];
+const ROM_FILE_ACCEPT = SUPPORTED_EXTENSIONS.map((extension) => `.${extension}`).join(',');
+fileInput.accept = ROM_FILE_ACCEPT;
+libraryInput.accept = ROM_FILE_ACCEPT;
+const DEFAULT_SETTINGS = {
+  theme: 'lime',
+  aspect: 'classic',
+  filter: 'off',
+  touchControls: true,
+  layout: 'three',
+  volume: 80,
+  haptics: true,
+  keepAwake: true,
+  startupSound: true,
+  devMode: false,
+};
+const COVER_BACKGROUNDS = [
+  'linear-gradient(135deg,#54294c,#24203c 60%,#d06261)',
+  'linear-gradient(135deg,#24575a,#192d45 60%,#6bc4a3)',
+  'linear-gradient(135deg,#5d4727,#28213d 58%,#dc8954)',
+  'linear-gradient(135deg,#323f73,#201c3c 58%,#a05fa5)',
+  'linear-gradient(135deg,#4a3040,#1d293c 62%,#d06b8a)',
+  'linear-gradient(135deg,#345743,#1b2c3b 58%,#9cb550)',
+];
+
+const SYSTEM_GROUPS = {
+  Sega: ['megadrive','segacd','32x','saturn','mastersystem','gamegear','dreamcast'],
+  Nintendo: ['nes','snes','gb','gbc','gba','nds','n64'],
+  PlayStation: ['ps1','ps2','psp','psvita'],
+  Atari: ['atari2600','atari5200','atari7800','jaguar','lynx','vb'],
+  Computadores: ['c64','c128','pet','plus4','vic20','amiga','dos'],
+  Arcade: ['arcade','mame2003'],
+  Outros: ['3do','coleco','pce','ngp','ws','pcfx'],
+};
+const SYSTEM_SUMMARIES = {
+  c64:'Computador doméstico · VICE', c128:'Computador doméstico · VICE', pet:'Computador clássico · VICE',
+  plus4:'Computador doméstico · VICE', vic20:'Computador doméstico · VICE', amiga:'Computador 16-bit · PUAE · Kickstart',
+  pcfx:'Console NEC · Mednafen', dos:'Jogos clássicos de PC', arcade:'Arcade · FinalBurn Neo', mame2003:'Arcade · MAME 2003',
+};
+const SYSTEM_DESCRIPTIONS = {
+  megadrive:'Console de 16 bits da Sega, conhecido como Genesis na América do Norte. A biblioteca aceita cartuchos em formatos como .md e .gen.',
+  segacd:'Acessório de CD do Mega Drive, lançado como Mega-CD em algumas regiões. Jogos costumam vir em imagens de disco e podem exigir BIOS.',
+  '32x':'Acessório que amplia o Mega Drive com hardware de 32 bits. Use arquivos próprios de jogos 32X; a compatibilidade depende do título.',
+  saturn:'Console de CD da Sega com arquitetura complexa e jogos 2D e 3D. Alguns títulos precisam da BIOS do Saturn.',
+  mastersystem:'Console doméstico de 8 bits da Sega. Aceita jogos em formatos como .sms; a BIOS pode ser opcional.',
+  gamegear:'Console portátil colorido da Sega, com jogos relacionados ao Master System. Alguns títulos podem usar BIOS opcional.',
+  dreamcast:'Console de 128 bits da Sega, com mídia GD-ROM. Os arquivos de jogo podem ser grandes e o núcleo requer isolamento do navegador.',
+  nes:'Nintendo Entertainment System e Famicom, consoles de 8 bits com cartuchos. Arquivos .nes e alguns formatos de disco são compatíveis.',
+  snes:'Super Nintendo, console de 16 bits da Nintendo. Compatível com arquivos .sfc e .smc.',
+  gb:'Game Boy original, portátil monocromático da Nintendo. BIOS é opcional para a maioria dos jogos.',
+  gbc:'Game Boy Color, versão colorida e retrocompatível da linha Game Boy. Aceita jogos .gbc e também cartuchos originais .gb.',
+  gba:'Game Boy Advance, portátil de 32 bits da Nintendo. Jogos normalmente usam arquivos .gba; BIOS pode ser opcional.',
+  nds:'Nintendo DS, portátil com duas telas e toque. O núcleo configurado pode exigir três arquivos de sistema nas Configurações.',
+  n64:'Nintendo 64, console de cartuchos com gráficos 3D. O desempenho varia bastante entre jogos e aparelhos.',
+  ps1:'PlayStation original, console de CD da Sony. Uma BIOS compatível é necessária para iniciar jogos neste núcleo.',
+  ps2:'PlayStation 2. Este catálogo oferece um atalho para um player externo; o núcleo não está integrado ao APK.',
+  psp:'PlayStation Portable, portátil da Sony com jogos em UMD e downloads. Jogos em disco podem exigir bastante memória e processamento.',
+  psvita:'PlayStation Vita. O atalho abre a página do Vita3K, um aplicativo externo e independente deste emulador.',
+  atari2600:'Atari 2600, console doméstico pioneiro de cartuchos. Os jogos são pequenos e usam formatos como .a26.',
+  atari5200:'Atari 5200, console doméstico de cartuchos da Atari. Alguns jogos precisam de configurações de controle específicas.',
+  atari7800:'Atari 7800, console retrocompatível com parte da biblioteca do 2600. BIOS pode melhorar a compatibilidade.',
+  jaguar:'Atari Jaguar, console de cartuchos e CD da Atari. Compatibilidade e desempenho podem variar entre jogos.',
+  lynx:'Atari Lynx, portátil colorido da Atari. Alguns títulos podem exigir o arquivo de sistema lynxboot.img.',
+  vb:'Virtual Boy, portátil 3D estereoscópico da Nintendo. A apresentação original usa tons de vermelho e preto.',
+  '3do':'3DO Interactive Multiplayer, console de CD lançado por diferentes fabricantes. Precisa de BIOS compatível.',
+  coleco:'ColecoVision, console doméstico de cartuchos dos anos 1980. Requer BIOS do sistema para carregar jogos.',
+  pce:'PC Engine, também vendido como TurboGrafx-16. Console de cartuchos da NEC e Hudson; alguns jogos usam CD.',
+  ngp:'Neo Geo Pocket, portátil da SNK. O catálogo inclui jogos de luta e ação feitos para a tela monocromática ou colorida.',
+  ws:'WonderSwan, portátil da Bandai lançado principalmente no Japão. WonderSwan Color também é compatível com o núcleo.',
+  arcade:'Arcade via FinalBurn Neo. Cada jogo normalmente é um pacote próprio e deve corresponder à versão compatível do núcleo.',
+  mame2003:'Arcade via MAME 2003. Use pacotes de jogos compatíveis com esta versão do MAME; arquivos de outras versões podem falhar.',
+  dos:'PC MS-DOS pelo DOSBox Pure. Jogos costumam vir em pacotes .zip ou .7z e podem precisar de configuração de teclado.',
+  c64:'Commodore 64, computador doméstico de 8 bits muito popular. O núcleo VICE aceita imagens de disco, fita, cartucho e programas.',
+  c128:'Commodore 128, computador doméstico compatível com o C64 e com modos próprios. O núcleo VICE suporta mídia em vários formatos.',
+  pet:'Commodore PET, uma família de computadores pessoais e educacionais. É indicado para programas e jogos simples de computador.',
+  plus4:'Commodore Plus/4, computador doméstico da família 264. A biblioteca usa programas, fitas e imagens de disco compatíveis.',
+  vic20:'Commodore VIC-20, computador doméstico de 8 bits anterior ao C64. O núcleo VICE suporta programas e mídia do sistema.',
+  amiga:'Commodore Amiga, família de computadores de 16/32 bits conhecida por jogos, música e gráficos. Jogos em disco podem exigir Kickstart.',
+  pcfx:'PC-FX, console de CD da NEC lançado no Japão. O núcleo Mednafen pode exigir um arquivo BIOS compatível.',
+};
+
+function readSettings() {
+  try {
+    return { ...DEFAULT_SETTINGS, ...JSON.parse(localStorage.getItem(SETTINGS_KEY) || '{}') };
+  } catch {
+    return { ...DEFAULT_SETTINGS };
+  }
+}
+
+let settings = readSettings();
+let selectedSystem = localStorage.getItem(SYSTEM_KEY) in SYSTEMS ? localStorage.getItem(SYSTEM_KEY) : 'megadrive';
+let currentBiosUrls = [];
+let dbPromise;
+let currentObjectUrl = null;
+let currentRecordId = null;
+let currentLaunch = 0;
+let toastTimer = null;
+let wakeLock = null;
+let nativeImmersive = false;
+let libraryFilter = 'all';
+let gameRunning = false;
+let dragDepth = 0;
+let chromeTimer = null;
+let startupAudioContext = null;
+const recentAppErrors = [];
+
+function showToast(message) {
+  toast.textContent = message;
+  toast.classList.add('is-visible');
+  window.clearTimeout(toastTimer);
+  toastTimer = window.setTimeout(() => toast.classList.remove('is-visible'), 3800);
+}
+
+function rememberAppError(message) {
+  const text = String(message || 'Erro sem descrição').replace(/\s+/g, ' ').slice(0, 220);
+  recentAppErrors.push(`${new Date().toLocaleTimeString('pt-BR')} · ${text}`);
+  if (recentAppErrors.length > 12) recentAppErrors.shift();
+}
+window.addEventListener('error', (event) => rememberAppError(event.message));
+window.addEventListener('unhandledrejection', (event) => rememberAppError(event.reason?.message || event.reason));
+
+function fileExtension(file) { return file.name.split('.').pop().toLowerCase(); }
+function supportsGame(file) { return SUPPORTED_EXTENSIONS.includes(fileExtension(file)); }
+function supportsSystemGame(file, systemId) {
+  const ext = fileExtension(file);
+  return Boolean(SYSTEMS[systemId] && (SYSTEMS[systemId].extensions.includes(ext) || ext === 'zip'));
+}
+function systemForFile(file, preferred = selectedSystem) {
+  const ext = fileExtension(file);
+  if (['md','gen','smd'].includes(ext)) return 'megadrive';
+  if (ext === '32x') return '32x';
+  if (['cdi','gdi'].includes(ext)) return 'dreamcast';
+  if (ext === 'sms') return 'mastersystem';
+  if (ext === 'gg') return 'gamegear';
+  if (ext === 'gbc') return 'gbc';
+  if (ext === 'gb') return 'gb';
+  if (ext === 'gba') return 'gba';
+  if (['nes','unf','unif','fds'].includes(ext)) return 'nes';
+  if (['sfc','smc','fig','swc'].includes(ext)) return 'snes';
+  if (['nds','dsi'].includes(ext)) return 'nds';
+  if (['a26'].includes(ext)) return 'atari2600';
+  if (['a52'].includes(ext)) return 'atari5200';
+  if (['a78'].includes(ext)) return 'atari7800';
+  if (['lnx','lyx'].includes(ext)) return 'lynx';
+  if (['vb','vboy'].includes(ext)) return 'vb';
+  if (['col','cv'].includes(ext)) return 'coleco';
+  if (['pce','sgx'].includes(ext)) return 'pce';
+  if (['ngp','ngc'].includes(ext)) return 'ngp';
+  if (['ws','wsc'].includes(ext)) return 'ws';
+  if (['j64','jag'].includes(ext)) return 'jaguar';
+  if (['z64','n64','v64'].includes(ext)) return 'n64';
+  if (['adf','adz','dms','ipf','lha'].includes(ext)) return 'amiga';
+  if (['zip','7z'].includes(ext) && SYSTEMS[preferred]) return preferred;
+  if (['bin','rom','iso','chd','cue'].includes(ext) && SYSTEMS[preferred]) return preferred;
+  if (SYSTEMS[preferred]?.extensions.includes(ext)) return preferred;
+  const matchingSystem = Object.entries(SYSTEMS).find(([, system]) => system.extensions.includes(ext));
+  if (matchingSystem) return matchingSystem[0];
+  return SYSTEMS[preferred] ? preferred : 'megadrive';
+}
+
+function selectSystem(systemId) {
+  if (!SYSTEMS[systemId]) return;
+  selectedSystem = systemId;
+  try { localStorage.setItem(SYSTEM_KEY, systemId); } catch { /* Selection still applies for this session. */ }
+  systemSelect.value = systemId;
+  updateSystemActions();
+}
+
+function playStartupSound() {
+  if (!settings.startupSound) return;
+  try {
+    const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+    if (!AudioContextClass) return;
+    startupAudioContext ||= new AudioContextClass();
+    const context = startupAudioContext;
+    context.resume().catch(() => {});
+    const now = context.currentTime + .025;
+    const oscillator = context.createOscillator();
+    const envelope = context.createGain();
+    const lowPass = context.createBiquadFilter();
+    lowPass.type = 'lowpass';
+    lowPass.frequency.setValueAtTime(1800, now);
+    oscillator.type = 'square';
+    oscillator.frequency.setValueAtTime(440, now);
+    oscillator.frequency.setValueAtTime(587.33, now + .105);
+    oscillator.frequency.setValueAtTime(783.99, now + .21);
+    const peak = .09 * (settings.volume / 100);
+    envelope.gain.setValueAtTime(.0001, now);
+    envelope.gain.linearRampToValueAtTime(peak, now + .015);
+    envelope.gain.setValueAtTime(peak, now + .21);
+    envelope.gain.exponentialRampToValueAtTime(.0001, now + .34);
+    oscillator.connect(lowPass).connect(envelope).connect(context.destination);
+    oscillator.start(now);
+    oscillator.stop(now + .35);
+    oscillator.addEventListener('ended', () => { oscillator.disconnect(); lowPass.disconnect(); envelope.disconnect(); }, { once: true });
+  } catch { /* Audio is optional; game loading continues when Web Audio is unavailable. */ }
+}
+function gameId(file, systemId = systemForFile(file)) {
+  return `${systemId}|${file.name.trim().toLocaleLowerCase()}|${file.size}|${file.lastModified || 0}`;
+}
+
+function openDatabase() {
+  if (dbPromise) return dbPromise;
+  dbPromise = new Promise((resolve, reject) => {
+    if (!('indexedDB' in window)) {
+      reject(new Error('O armazenamento local não está disponível neste navegador.'));
+      return;
+    }
+    const request = indexedDB.open(DB_NAME, DB_VERSION);
+    request.onupgradeneeded = () => {
+      const database = request.result;
+      if (!database.objectStoreNames.contains('games')) database.createObjectStore('games', { keyPath: 'id' });
+      if (!database.objectStoreNames.contains('bios')) database.createObjectStore('bios');
+    };
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error || new Error('Não foi possível abrir a biblioteca.'));
+  });
+  return dbPromise;
+}
+
+async function dbRequest(mode, method, ...args) {
+  const database = await openDatabase();
+  return new Promise((resolve, reject) => {
+    const transaction = database.transaction('games', mode);
+    const request = transaction.objectStore('games')[method](...args);
+    let result;
+    request.onsuccess = () => { result = request.result; };
+    request.onerror = () => reject(request.error || new Error('Não foi possível acessar a biblioteca.'));
+    transaction.oncomplete = () => resolve(result);
+    transaction.onerror = () => reject(transaction.error || new Error('Não foi possível salvar a biblioteca.'));
+    transaction.onabort = () => reject(transaction.error || new Error('O armazenamento foi interrompido.'));
+  });
+}
+
+async function saveGameFile(file, systemId = systemForFile(file)) {
+  const id = gameId(file, systemId);
+  const existing = await dbRequest('readonly', 'get', id);
+  const record = {
+    id,
+    name: file.name,
+    size: file.size,
+    lastModified: file.lastModified || Date.now(),
+    format: file.name.split('.').pop().toUpperCase(),
+    rom: file,
+    systemId,
+    favorite: Boolean(existing?.favorite),
+    addedAt: existing?.addedAt || Date.now(),
+    lastPlayed: existing?.lastPlayed || 0,
+    playCount: existing?.playCount || 0,
+  };
+  await dbRequest('readwrite', 'put', record);
+  navigator.storage?.persist?.().catch?.(() => {});
+  return record;
+}
+
+async function biosRequest(mode, method, ...args) {
+  const database = await openDatabase();
+  return new Promise((resolve, reject) => {
+    const tx = database.transaction('bios', mode);
+    const request = tx.objectStore('bios')[method](...args);
+    let result; request.onsuccess = () => { result = request.result; };
+    request.onerror = () => reject(request.error || new Error('BIOS storage failed'));
+    tx.oncomplete = () => resolve(result); tx.onerror = () => reject(tx.error);
+  });
+}
+
+function prettySize(bytes) {
+  if (bytes < 1024 * 1024) return `${Math.max(1, Math.round(bytes / 1024))} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(bytes >= 10 * 1024 * 1024 ? 0 : 1)} MB`;
+}
+
+function prettyDate(timestamp) {
+  if (!timestamp) return 'AINDA NÃO JOGADO';
+  const today = new Date();
+  const date = new Date(timestamp);
+  if (date.toDateString() === today.toDateString()) return 'JOGADO HOJE';
+  return date.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' }).replace('.', '').toUpperCase();
+}
+
+function displayTitle(name) {
+  return name.replace(/\.[^.]+$/, '').replace(/[_-]+/g, ' ').trim() || name;
+}
+
+function makeElement(tag, className, text) {
+  const element = document.createElement(tag);
+  if (className) element.className = className;
+  if (text !== undefined) element.textContent = text;
+  return element;
+}
+
+async function renderLibrary() {
+  let games;
+  try {
+    games = await dbRequest('readonly', 'getAll');
+  } catch {
+    games = [];
+    showToast('A biblioteca local não está disponível. Você ainda pode abrir uma ROM diretamente.');
+  }
+  games.sort((a, b) => (b.lastPlayed || b.addedAt) - (a.lastPlayed || a.addedAt));
+
+  const query = document.querySelector('#library-search').value.trim().toLocaleLowerCase();
+  const favorites = games.filter((game) => game.favorite).length;
+  document.querySelector('#library-count').textContent = String(games.length);
+  document.querySelector('#favorite-count').textContent = String(favorites);
+  document.querySelector('#all-count').textContent = String(games.length);
+  document.querySelector('#filter-favorite-count').textContent = String(favorites);
+  const mostRecent = games.find((game) => game.lastPlayed);
+  document.querySelector('#recent-game-label').textContent = mostRecent ? displayTitle(mostRecent.name) : '—';
+
+  let shown = games.filter((game) => {
+    const matchesFilter = libraryFilter !== 'favorites' || game.favorite;
+    const matchesQuery = displayTitle(game.name).toLocaleLowerCase().includes(query)
+      || game.format.toLocaleLowerCase().includes(query);
+    return matchesFilter && matchesQuery;
+  });
+  const sort = document.querySelector('#library-sort').value;
+  if (sort === 'name') shown.sort((a, b) => displayTitle(a.name).localeCompare(displayTitle(b.name), 'pt-BR'));
+  else if (sort === 'played') shown.sort((a, b) => (b.playCount || 0) - (a.playCount || 0) || (b.lastPlayed || 0) - (a.lastPlayed || 0));
+  else shown.sort((a, b) => (b.lastPlayed || b.addedAt) - (a.lastPlayed || a.addedAt));
+
+  libraryList.replaceChildren();
+  for (const game of shown) libraryList.append(makeGameCard(game));
+  const noGames = games.length === 0;
+  emptyLibrary.hidden = !noGames;
+  libraryList.hidden = noGames || shown.length === 0;
+  noResults.hidden = noGames || shown.length > 0;
+}
+
+function makeGameCard(game) {
+  let hash = 0;
+  for (const char of game.name) hash = (hash * 31 + char.charCodeAt(0)) | 0;
+  const card = makeElement('article', 'game-card');
+  const cover = makeElement('div', 'game-cover');
+  cover.style.setProperty('--cover-bg', COVER_BACKGROUNDS[Math.abs(hash) % COVER_BACKGROUNDS.length]);
+  const mark = makeElement('div', 'cover-mark', '▶');
+  const gameSystem = SYSTEMS[game.systemId || 'megadrive'] || SYSTEMS.megadrive;
+  mark.append(makeElement('span', '', `${gameSystem.name.toUpperCase()} / ${CURRENT_VERSION}`));
+  cover.append(mark);
+  const favorite = makeElement('button', `game-favorite${game.favorite ? ' is-favorite' : ''}`, game.favorite ? '♥' : '♡');
+  favorite.type = 'button';
+  favorite.setAttribute('aria-label', game.favorite ? 'Remover dos favoritos' : 'Adicionar aos favoritos');
+  favorite.addEventListener('click', async () => {
+    game.favorite = !game.favorite;
+    await dbRequest('readwrite', 'put', game);
+    await renderLibrary();
+  });
+  cover.append(favorite, makeElement('span', 'game-format', game.format));
+
+  const info = makeElement('div', 'game-info');
+  info.append(makeElement('h3', 'game-name', displayTitle(game.name)));
+  const meta = makeElement('div', 'game-meta');
+  meta.append(makeElement('span', '', gameSystem.name), makeElement('span', '', prettySize(game.size)), makeElement('span', '', game.playCount ? `${game.playCount} PARTIDAS` : prettyDate(game.lastPlayed)));
+  const actions = makeElement('div', 'game-actions');
+  const play = makeElement('button', 'game-play', '▶  JOGAR');
+  play.type = 'button';
+  play.addEventListener('click', () => {
+    if (gameSystem.kind !== 'external') playStartupSound();
+    playFromLibrary(game.id, gameSystem.kind !== 'external');
+  });
+  const remove = makeElement('button', 'game-remove', '×');
+  remove.type = 'button';
+  remove.title = 'Remover da biblioteca';
+  remove.setAttribute('aria-label', `Remover ${displayTitle(game.name)} da biblioteca`);
+  remove.addEventListener('click', async () => {
+    if (!window.confirm(`Remover “${displayTitle(game.name)}” da biblioteca?`)) return;
+    await dbRequest('readwrite', 'delete', game.id);
+    await renderLibrary();
+    showToast('Jogo removido da biblioteca.');
+  });
+  const exportRom = makeElement('button', 'game-export', '↓');
+  exportRom.type = 'button';
+  exportRom.title = 'Exportar arquivo do jogo';
+  exportRom.setAttribute('aria-label', `Exportar ${displayTitle(game.name)}`);
+  exportRom.addEventListener('click', () => {
+    if (!(game.rom instanceof Blob)) { showToast('O arquivo deste jogo não está disponível para exportação.'); return; }
+    const url = URL.createObjectURL(game.rom);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = game.name.replace(/[\\/:*?"<>|]/g, '_');
+    link.hidden = true;
+    document.body.append(link);
+    link.click();
+    link.remove();
+    window.setTimeout(() => URL.revokeObjectURL(url), 1500);
+  });
+  actions.append(play, exportRom, remove);
+  info.append(meta, actions);
+  card.append(cover, info);
+  return card;
+}
+
+function applyLiveSettings() {
+  document.documentElement.dataset.theme = settings.theme;
+  playerScreen.classList.toggle('is-wide', settings.aspect === 'wide');
+  playerScreen.classList.toggle('has-crt', settings.filter === 'crt');
+}
+
+function populateSettingsForm() {
+  document.querySelector('#setting-theme').value = settings.theme;
+  document.querySelector('#setting-aspect').value = settings.aspect;
+  document.querySelector('#setting-filter').value = settings.filter;
+  document.querySelector('#setting-controls').checked = settings.touchControls;
+  document.querySelector('#setting-layout').value = settings.layout;
+  document.querySelector('#setting-haptics').checked = settings.haptics;
+  document.querySelector('#setting-wake').checked = settings.keepAwake;
+  document.querySelector('#setting-startup-sound').checked = settings.startupSound;
+  volumeInput.value = settings.volume;
+  volumeValue.value = `${settings.volume}%`;
+  volumeValue.textContent = `${settings.volume}%`;
+}
+
+function getSettingsFromForm() {
+  return {
+    theme: document.querySelector('#setting-theme').value,
+    aspect: document.querySelector('#setting-aspect').value,
+    filter: document.querySelector('#setting-filter').value,
+    touchControls: document.querySelector('#setting-controls').checked,
+    layout: document.querySelector('#setting-layout').value,
+    volume: Number(volumeInput.value),
+    haptics: document.querySelector('#setting-haptics').checked,
+    keepAwake: document.querySelector('#setting-wake').checked,
+    startupSound: document.querySelector('#setting-startup-sound').checked,
+    devMode: Boolean(settings.devMode),
+  };
+}
+
+function virtualGamepadSettings() {
+  if (!settings.touchControls) return [];
+  const controls = [{ type: 'dpad', location: 'left', left: '50%', right: '50%', joystickInput: false, inputValues: [4, 5, 6, 7] }];
+  if (settings.layout === 'six') {
+    controls.push(
+      { type: 'button', text: 'X', id: 'sixbit-x', location: 'right', left: 0, top: 0, bold: true, input_value: 9 },
+      { type: 'button', text: 'Y', id: 'sixbit-y', location: 'right', left: 48, top: 0, bold: true, input_value: 1 },
+      { type: 'button', text: 'Z', id: 'sixbit-z', location: 'right', left: 96, top: 0, bold: true, input_value: 11 },
+      { type: 'button', text: 'A', id: 'sixbit-a', location: 'right', left: 0, top: 49, bold: true, input_value: 8 },
+      { type: 'button', text: 'B', id: 'sixbit-b', location: 'right', left: 48, top: 49, bold: true, input_value: 0 },
+      { type: 'button', text: 'C', id: 'sixbit-c', location: 'right', left: 96, top: 49, bold: true, input_value: 10 },
+    );
+  } else {
+    controls.push(
+      { type: 'button', text: 'A', id: 'sixbit-a', location: 'right', left: 0, top: 24, bold: true, input_value: 8 },
+      { type: 'button', text: 'B', id: 'sixbit-b', location: 'right', left: 49, top: 0, bold: true, input_value: 0 },
+      { type: 'button', text: 'C', id: 'sixbit-c', location: 'right', left: 98, top: 24, bold: true, input_value: 10 },
+    );
+  }
+  controls.push(
+    { type: 'button', text: 'MODE', id: 'sixbit-mode', location: 'center', left: -34, fontSize: 10, block: true, input_value: 2 },
+    { type: 'button', text: 'START', id: 'sixbit-start', location: 'center', left: 30, fontSize: 10, block: true, input_value: 3 },
+  );
+  return controls;
+}
+
+function openExternalPlayer(url) {
+  const nativeBrowser = window.Capacitor?.Plugins?.ExternalBrowser;
+  if (nativeBrowser?.open) {
+    nativeBrowser.open({ url }).catch(() => showToast('Não consegui abrir o link externo neste aparelho.'));
+    return;
+  }
+  const link = document.createElement('a');
+  link.href = url;
+  link.target = '_blank';
+  link.rel = 'noopener noreferrer';
+  link.setAttribute('aria-hidden', 'true');
+  link.style.cssText = 'position:fixed;left:-10000px;top:0;width:1px;height:1px;';
+  document.body.append(link);
+  link.click();
+  link.remove();
+}
+
+function openSelectedExternalSystem() {
+  const system = SYSTEMS[selectedSystem];
+  if (system?.kind !== 'external') return;
+  openExternalPlayer(system.externalUrl);
+  showToast(selectedSystem === 'psvita'
+    ? 'Vita3K é um app externo. O site oficial tem a versão para Android e computador.'
+    : 'O player de PS2 abre em outra página; selecione o jogo e a BIOS por lá.');
+}
+
+async function launchGame(file, record = null, soundAlreadyPlayed = false) {
+  const systemId = record?.systemId || systemForFile(file);
+  const system = SYSTEMS[systemId] || SYSTEMS.megadrive;
+  if (!supportsSystemGame(file, systemId)) {
+    showToast('Formato não reconhecido para o sistema selecionado.');
+    return;
+  }
+  if (system.kind === 'external') {
+    openExternalPlayer(system.externalUrl);
+    showToast(systemId === 'psvita'
+      ? 'Vita3K é um app externo. O site oficial tem a versão para Android e computador.'
+      : 'O player de PS2 abre em outra página; selecione o jogo e a BIOS por lá.');
+    return;
+  }
+  if ((system.threaded || system.requiresIsolation) && !window.crossOriginIsolated) {
+    showToast(`${system.name} precisa de isolamento entre origens. Atualize a página depois que o app terminar de configurar o núcleo.`);
+    return;
+  }
+  selectSystem(systemId);
+  if (!soundAlreadyPlayed) playStartupSound();
+  for (const url of currentBiosUrls) URL.revokeObjectURL(url);
+  currentBiosUrls = [];
+  const biosKeys = system.biosKeys || (system.biosKey ? [system.biosKey] : (['segacd','saturn'].includes(systemId) ? [systemId] : []));
+  const biosFiles = {};
+  for (const key of biosKeys) {
+    biosFiles[key] = await biosRequest('readonly', 'get', key).catch(() => null);
+  }
+  if (['ps1','segacd','saturn'].includes(systemId) && !biosFiles[biosKeys[0]]) {
+    showToast(systemId === 'ps1'
+      ? 'O PS1 precisa de uma BIOS compatível. Selecione-a nas configurações.'
+      : `Para ${system.name}, selecione a BIOS nas configurações.`);
+  }
+  if (systemId === 'dreamcast' && (!biosFiles['dreamcast-boot'] || !biosFiles['dreamcast-flash'])) {
+    showToast('Dreamcast funciona melhor com dc_boot.bin e dc_flash.bin salvos nas configurações.');
+  }
+  if (systemId === 'nds' && biosKeys.some((key) => !biosFiles[key])) {
+    showToast('Nintendo DS com melonDS precisa de bios7.bin, bios9.bin e firmware.bin nas configurações.');
+  }
+  if (['3do','coleco'].includes(systemId) && !biosFiles[biosKeys[0]]) {
+    showToast(`${system.name} precisa de sua BIOS para iniciar. Selecione-a nas configurações.`);
+  }
+  if (systemId === 'lynx' && !biosFiles.lynx) {
+    showToast('Atari Lynx pode precisar do arquivo lynxboot.img para alguns jogos.');
+  }
+  const biosUrls = {};
+  for (const [key, bios] of Object.entries(biosFiles)) {
+    if (!bios) continue;
+    biosUrls[key] = URL.createObjectURL(bios);
+    currentBiosUrls.push(biosUrls[key]);
+  }
+  gameRunning = false;
+  wakeLock?.release?.();
+  wakeLock = null;
+  const launchId = ++currentLaunch;
+  currentRecordId = record?.id || null;
+  if (currentObjectUrl) URL.revokeObjectURL(currentObjectUrl);
+  currentObjectUrl = URL.createObjectURL(file);
+  const safeRomUrl = JSON.stringify(currentObjectUrl).replace(/</g, '\\u003c');
+  // Keep the extension: EmulatorJS uses gameName for its virtual ROM filename
+  // when gameUrl is a blob URL, and the core needs that extension to identify
+  // the content format (for example .md, .gen, .bin, or .smd).
+  const safeGameName = JSON.stringify(file.name).replace(/</g, '\\u003c');
+  const safeCore = JSON.stringify(system.core);
+  const safeControl = JSON.stringify(system.control);
+  const safeBiosUrl = JSON.stringify(biosUrls[system.biosKey || systemId] || '');
+  const externalFiles = {};
+  if (biosUrls['dreamcast-boot']) externalFiles['/system/dc/dc_boot.bin'] = biosUrls['dreamcast-boot'];
+  if (biosUrls['dreamcast-flash']) externalFiles['/system/dc/dc_flash.bin'] = biosUrls['dreamcast-flash'];
+  if (biosUrls['nds-bios7']) externalFiles['/system/ds/bios7.bin'] = biosUrls['nds-bios7'];
+  if (biosUrls['nds-bios9']) externalFiles['/system/ds/bios9.bin'] = biosUrls['nds-bios9'];
+  if (biosUrls['nds-firmware']) externalFiles['/system/ds/firmware.bin'] = biosUrls['nds-firmware'];
+  const safeExternalFiles = JSON.stringify(externalFiles).replace(/</g, '\\u003c');
+  // Load the bundled runtime directly. The EJSData service-worker alias may
+  // not be active yet on a first launch, while these files ship with the app.
+  const safeDataPath = JSON.stringify(new URL('ejs-data/', APP_BASE_URL).href);
+  const safeLoaderUrl = JSON.stringify(new URL('ejs-data/loader.js', APP_BASE_URL).href);
+  const virtualPad = JSON.stringify(systemId === 'megadrive' ? virtualGamepadSettings() : (settings.touchControls ? null : []));
+  const volume = Math.min(100, Math.max(0, settings.volume)) / 100;
+
+  playerView.hidden = false;
+  document.body.classList.add('is-playing');
+  playerName.textContent = displayTitle(file.name);
+  playerStatus.textContent = `PREPARANDO ${system.name.toUpperCase()}`;
+  playerLoader.hidden = false;
+  playerLoader.querySelector('.loader-ring').hidden = false;
+  playerLoader.querySelector('strong').textContent = 'Preparando o jogo';
+  playerLoader.querySelector('span').textContent = `Conectando ao núcleo ${system.name}`;
+  document.querySelector('#player-system-label').textContent = system.name.toUpperCase();
+  mount.replaceChildren();
+  mount.hidden = false;
+  controlHint.textContent = 'CARREGANDO JOGO';
+
+  const iframe = document.createElement('iframe');
+  iframe.className = 'emulator-frame';
+  iframe.title = `Emulador — ${file.name}`;
+  iframe.allow = 'autoplay; fullscreen; gamepad; pointer-lock';
+  iframe.setAttribute('allowfullscreen', '');
+  iframe.srcdoc = `<!doctype html>
+    <html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+    <style>
+      html,body,#game{width:100%;height:100%;margin:0;background:#000;overflow:hidden}
+      body{touch-action:none}
+      [id^="sixbit-a"],[id^="sixbit-b"],[id^="sixbit-c"],[id^="sixbit-x"],[id^="sixbit-y"],[id^="sixbit-z"]{background:radial-gradient(circle at 35% 25%,#f17858,#a92820)!important;border:2px solid #701b16!important;border-radius:50%!important;color:#fff!important;box-shadow:inset 0 1px 2px #ffb09a,0 2px 5px #0009!important}
+      [id^="sixbit-mode"],[id^="sixbit-start"]{background:linear-gradient(#a7a99c,#55584d)!important;border:1px solid #33352d!important;border-radius:8px!important;color:#171811!important}
+    </style></head>
+    <body><div id="game"></div><script>
+      window.EJS_player = '#game';
+      window.EJS_core = ${safeCore};
+      window.EJS_gameUrl = ${safeRomUrl};
+      window.EJS_gameName = ${safeGameName};
+      window.EJS_pathtodata = ${safeDataPath};
+      window.EJS_color = '${settings.theme === 'violet' ? '#d19aff' : settings.theme === 'blue' ? '#61dafa' : '#c8f45a'}';
+      window.EJS_backgroundColor = '#000000';
+      if (${safeControl}) window.EJS_controlScheme = ${safeControl};
+      if (${safeBiosUrl}) window.EJS_biosUrl = ${safeBiosUrl};
+      if (${Object.keys(externalFiles).length > 0}) window.EJS_externalFiles = ${safeExternalFiles};
+      if (${Boolean(system.threaded)}) window.EJS_threads = true;
+      if (${virtualPad} !== null) window.EJS_VirtualGamepadSettings = ${virtualPad};
+      window.EJS_volume = ${volume};
+      window.EJS_language = 'pt-BR';
+      window.EJS_DEBUG_XX = ${Boolean(settings.devMode)};
+      window.EJS_startOnLoaded = false;
+      window.EJS_ready = function () { parent.postMessage({ type: 'sixteenbit-emulator-ready', id: ${launchId} }, '*'); };
+      window.EJS_onGameStart = function () { parent.postMessage({ type: 'sixteenbit-game-started', id: ${launchId} }, '*'); };
+      window.addEventListener('error', function (event) { parent.postMessage({ type: 'sixteenbit-runtime-error', id: ${launchId}, message: event.message || 'Erro no núcleo' }, '*'); });
+      window.addEventListener('unhandledrejection', function (event) { parent.postMessage({ type: 'sixteenbit-runtime-error', id: ${launchId}, message: event.reason && event.reason.message || 'Falha assíncrona no núcleo' }, '*'); });
+      window.addEventListener('pointerdown', function () { parent.postMessage({ type: 'sixteenbit-player-activity', id: ${launchId} }, '*'); if (${settings.haptics}) { try { navigator.vibrate && navigator.vibrate(8); } catch (_) {} } });
+      window.addEventListener('keydown', function () { parent.postMessage({ type: 'sixteenbit-player-activity', id: ${launchId} }, '*'); });
+    <\/script><script src=${safeLoaderUrl} onerror="parent.postMessage({type:'sixteenbit-load-error',id:${launchId}}, '*')"><\/script></body></html>`;
+  iframe.addEventListener('error', () => showPlayerError('Não foi possível abrir o emulador. Confira sua conexão e tente novamente.'));
+  mount.append(iframe);
+
+  window.setTimeout(() => {
+    if (currentLaunch === launchId && playerStatus.textContent.startsWith('PREPARANDO ')) {
+      showPlayerError('O emulador demorou para iniciar. Confira o arquivo e sua conexão.');
+    }
+  }, 60000);
+}
+
+function showPlayerError(message) {
+  rememberAppError(message);
+  playerStatus.textContent = 'NÃO FOI POSSÍVEL CARREGAR';
+  playerLoader.hidden = false;
+  playerLoader.querySelector('.loader-ring').hidden = true;
+  playerLoader.querySelector('strong').textContent = 'Não foi possível iniciar';
+  playerLoader.querySelector('span').textContent = message;
+  controlHint.textContent = 'FALHA AO INICIAR';
+  showToast(message);
+}
+
+async function openGameFile(file) {
+  if (SYSTEMS[selectedSystem]?.kind === 'external') {
+    openSelectedExternalSystem();
+    return;
+  }
+  if (!file || !supportsGame(file)) {
+    showToast('Selecione um arquivo aceito pelo sistema escolhido (.md, .32x, .iso, .chd, .cue ou .zip).');
+    return;
+  }
+  const systemId = systemForFile(file);
+  if (!supportsSystemGame(file, systemId)) {
+    showToast(`O formato .${fileExtension(file)} não é compatível com ${SYSTEMS[systemId]?.name || 'o sistema selecionado'}.`);
+    return;
+  }
+  const requestedSystem = SYSTEMS[systemId];
+  if ((requestedSystem.threaded || requestedSystem.requiresIsolation) && !window.crossOriginIsolated) {
+    showToast(`${requestedSystem.name} precisa de isolamento entre origens. Atualize a página depois que o app terminar de configurar o núcleo.`);
+    return;
+  }
+  playStartupSound();
+  let record = null;
+  try {
+    record = await saveGameFile(file, systemId);
+    await renderLibrary();
+  } catch {
+    showToast('A ROM vai abrir, mas não foi possível guardá-la na biblioteca. Confira o espaço disponível.');
+  }
+  await launchGame(file, record, true);
+}
+
+async function playFromLibrary(id, soundAlreadyPlayed = false) {
+  try {
+    const record = await dbRequest('readonly', 'get', id);
+    if (SYSTEMS[record?.systemId]?.kind === 'external') {
+      selectSystem(record.systemId);
+      openSelectedExternalSystem();
+      return;
+    }
+    if (!record?.rom) throw new Error('Arquivo ausente.');
+    const file = new File([record.rom], record.name, { type: record.rom.type || 'application/octet-stream', lastModified: record.lastModified });
+    await launchGame(file, record, soundAlreadyPlayed);
+  } catch {
+    showToast('Não consegui abrir este arquivo. Remova o jogo e adicione a ROM novamente.');
+    await renderLibrary();
+  }
+}
+
+async function importFiles(files) {
+  if (SYSTEMS[selectedSystem]?.kind === 'external') {
+    openSelectedExternalSystem();
+    return;
+  }
+  const selected = Array.from(files || []);
+  const supported = selected.filter(supportsGame);
+  const ignored = selected.length - supported.length;
+  if (!supported.length) {
+    showToast('Não encontrei ROMs compatíveis nos arquivos selecionados.');
+    return;
+  }
+  let saved = 0;
+  for (const file of supported) {
+    try { await saveGameFile(file, systemForFile(file)); saved += 1; } catch { /* Continue importing the remaining ROMs. */ }
+  }
+  await renderLibrary();
+  showToast(saved === supported.length
+    ? `${saved} ${saved === 1 ? 'jogo adicionado' : 'jogos adicionados'} à biblioteca${ignored ? ` · ${ignored} ignorado(s)` : ''}.`
+    : `${saved} de ${supported.length} arquivos foram salvos. Confira o espaço do aparelho.`);
+}
+
+async function closePlayer() {
+  if (document.fullscreenElement && document.exitFullscreen) {
+    try { await document.exitFullscreen(); } catch { /* Restore the native system bars below regardless. */ }
+  }
+  await setNativeImmersive(false);
+  playerView.classList.remove('chrome-hidden');
+  screen.orientation?.unlock?.();
+  gameRunning = false;
+  wakeLock?.release?.();
+  wakeLock = null;
+  playerView.hidden = true;
+  document.body.classList.remove('is-playing');
+  mount.replaceChildren();
+  mount.hidden = true;
+  if (currentObjectUrl) URL.revokeObjectURL(currentObjectUrl);
+  currentObjectUrl = null;
+  for (const url of currentBiosUrls) URL.revokeObjectURL(url);
+  currentBiosUrls = [];
+  currentRecordId = null;
+  await renderLibrary();
+}
+
+async function setNativeImmersive(enabled) {
+  let applied = false;
+  try {
+    const plugin = window.Capacitor?.Plugins?.ImmersiveMode;
+    if (plugin?.setEnabled) {
+      await plugin.setEnabled({ enabled });
+      applied = enabled;
+    }
+  } catch {
+    // Browser fullscreen remains available if the native bridge is absent.
+  }
+  nativeImmersive = applied;
+  syncImmersiveChrome();
+  updateFullscreenButton();
+  return applied;
+}
+
+function syncImmersiveChrome() {
+  const immersive = Boolean(document.fullscreenElement || nativeImmersive);
+  playerView.classList.toggle('is-immersive', immersive);
+  if (immersive) showPlayerChrome();
+  else {
+    window.clearTimeout(chromeTimer);
+    playerView.classList.remove('chrome-hidden');
+  }
+}
+
+function showPlayerChrome(force = false) {
+  if (!playerView.classList.contains('is-immersive')) return;
+  const wasHidden = playerView.classList.contains('chrome-hidden');
+  if (!force && !wasHidden && chromeTimer) return;
+  playerView.classList.remove('chrome-hidden');
+  window.clearTimeout(chromeTimer);
+  chromeTimer = window.setTimeout(() => {
+    if (!settingsDialog.open && !document.querySelector('#developer-dialog').open && !document.querySelector('#system-descriptions-dialog').open && playerView.classList.contains('is-immersive')) playerView.classList.add('chrome-hidden');
+  }, 2600);
+}
+
+async function toggleFullscreen() {
+  const isFullscreen = Boolean(document.fullscreenElement || nativeImmersive);
+  if (isFullscreen) {
+    if (document.fullscreenElement && document.exitFullscreen) {
+      try { await document.exitFullscreen(); } catch { /* Also ask Android to restore its bars. */ }
+    }
+    await setNativeImmersive(false);
+    screen.orientation?.unlock?.();
+    return;
+  }
+  let browserFullscreen = false;
+  try {
+    const enter = document.documentElement.requestFullscreen || document.documentElement.webkitRequestFullscreen;
+    if (enter) {
+      await enter.call(document.documentElement);
+      browserFullscreen = true;
+    }
+  } catch { /* Continue with Android immersive mode when browser fullscreen is unavailable. */ }
+  await setNativeImmersive(true);
+  try { await screen.orientation?.lock?.('landscape'); } catch { /* Rotation can be locked by the system. */ }
+  syncImmersiveChrome();
+  if (!browserFullscreen && !nativeImmersive) showToast('Não foi possível ativar a tela cheia.');
+}
+
+function updateFullscreenButton() {
+  const fullscreen = Boolean(document.fullscreenElement || nativeImmersive);
+  fullscreenButton.setAttribute('aria-label', fullscreen ? 'Sair da tela cheia' : 'Expandir jogo para tela cheia');
+  fullscreenButton.title = fullscreen ? 'Sair da tela cheia' : 'Tela cheia total';
+  fullscreenButton.innerHTML = fullscreen
+    ? '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8h4V4M20 8h-4V4M16 20v-4h4M8 20v-4H4"/></svg>'
+    : '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 4H4v4M16 4h4v4M20 16v4h-4M4 16v4h4"/></svg>';
+}
+
+function openSettings() {
+  populateSettingsForm();
+  settingsDialog.showModal();
+}
+
+function renderSystemDescriptions() {
+  const query = document.querySelector('#descriptions-search').value.trim().toLocaleLowerCase('pt-BR');
+  const groups = Object.entries(SYSTEM_GROUPS).map(([group, ids]) => {
+    const cards = ids.filter((id) => SYSTEMS[id] && `${SYSTEMS[id].name} ${SYSTEM_DESCRIPTIONS[id] || ''} ${group}`.toLocaleLowerCase('pt-BR').includes(query));
+    if (!cards.length) return '';
+    return `<section class="description-group"><h3>${group}</h3><div class="description-cards">${cards.map((id) => {
+      const system = SYSTEMS[id];
+      const mode = system.kind === 'external' ? 'Player externo' : `Núcleo integrado · ${system.core}`;
+      return `<article class="description-card"><div><h4>${system.name}</h4><span>${mode}</span></div><p>${SYSTEM_DESCRIPTIONS[id] || 'Sistema retrô disponível no catálogo.'}</p></article>`;
+    }).join('')}</div></section>`;
+  }).join('');
+  document.querySelector('#descriptions-count').textContent = `${Object.keys(SYSTEMS).filter((id) => `${SYSTEMS[id].name} ${SYSTEM_DESCRIPTIONS[id] || ''}`.toLocaleLowerCase('pt-BR').includes(query)).length} descrições`;
+  document.querySelector('#descriptions-list').innerHTML = groups || '<p class="picker-empty">Nenhuma descrição encontrada.</p>';
+}
+
+async function refreshDeveloperPanel() {
+  let graphics = 'Não detectado';
+  try {
+    const canvas = document.createElement('canvas');
+    graphics = canvas.getContext('webgl2') ? 'WebGL 2' : (canvas.getContext('webgl') ? 'WebGL 1' : 'Indisponível');
+  } catch { graphics = 'Indisponível'; }
+  let storage = 'Indisponível';
+  try {
+    const estimate = await navigator.storage?.estimate?.();
+    if (estimate) storage = `${prettySize(estimate.usage || 0)} usado · ${estimate.quota ? prettySize(estimate.quota) : 'cota desconhecida'}`;
+  } catch { /* Storage estimates are optional and may be blocked by the browser. */ }
+  const diagnostics = [
+    ['Versão do app', CURRENT_VERSION], ['Sistema selecionado', SYSTEMS[selectedSystem]?.name || selectedSystem],
+    ['Núcleo atual', SYSTEMS[selectedSystem]?.core || 'player externo'],
+    ['Núcleos integrados', `${Object.values(SYSTEMS).filter((system) => system.kind !== 'external').length}`],
+    ['WebAssembly', typeof WebAssembly === 'object' ? 'Disponível' : 'Indisponível'], ['Gráficos', graphics],
+    ['Threads isoladas', window.crossOriginIsolated ? 'Disponíveis' : 'Indisponíveis nesta origem'],
+    ['Armazenamento do app', storage], ['Service worker', 'serviceWorker' in navigator ? 'Disponível' : 'Indisponível'],
+    ['Memória do aparelho', navigator.deviceMemory ? `aprox. ${navigator.deviceMemory} GB` : 'Não informada'],
+  ];
+  const grid = document.querySelector('#developer-grid');
+  grid.replaceChildren(...diagnostics.map(([label, value]) => {
+    const item = document.createElement('div'); item.className = 'developer-metric';
+    const heading = document.createElement('small'); heading.textContent = label;
+    const result = document.createElement('strong'); result.textContent = value;
+    item.append(heading, result); return item;
+  }));
+  document.querySelector('#setting-dev-debug').checked = Boolean(settings.devMode);
+  document.querySelector('#developer-log').textContent = recentAppErrors.length ? recentAppErrors.join('\n') : 'Nenhum erro registrado nesta sessão.';
+  return Object.fromEntries(diagnostics);
+}
+
+function showBiosOnlyExplanation() {
+  showToast('Neste núcleo, a BIOS é firmware: o EmulatorJS precisa de uma ROM de jogo para iniciar. Salve a BIOS aqui e abra um jogo do mesmo sistema.');
+}
+
+async function requestWakeLock() {
+  if (!settings.keepAwake || !('wakeLock' in navigator) || document.visibilityState !== 'visible' || wakeLock) return;
+  try {
+    wakeLock = await navigator.wakeLock.request('screen');
+    wakeLock.addEventListener('release', () => { wakeLock = null; });
+  } catch { /* The game keeps running if the system does not grant a wake lock. */ }
+}
+
+chooseButton.addEventListener('click', () => SYSTEMS[selectedSystem]?.kind === 'external' ? openSelectedExternalSystem() : fileInput.click());
+fileInput.addEventListener('change', async (event) => {
+  const [file] = event.target.files;
+  event.target.value = '';
+  if (file) await openGameFile(file);
+});
+libraryImportButton.addEventListener('click', () => SYSTEMS[selectedSystem]?.kind === 'external' ? openSelectedExternalSystem() : libraryInput.click());
+document.querySelector('#empty-import').addEventListener('click', () => SYSTEMS[selectedSystem]?.kind === 'external' ? openSelectedExternalSystem() : libraryInput.click());
+libraryInput.addEventListener('change', async (event) => {
+  const files = event.target.files;
+  event.target.value = '';
+  await importFiles(files);
+});
+document.querySelector('#player-back').addEventListener('click', closePlayer);
+document.querySelector('#settings-open').addEventListener('click', openSettings);
+document.querySelector('#player-settings-open').addEventListener('click', openSettings);
+const systemDescriptionsDialog = document.querySelector('#system-descriptions-dialog');
+const developerDialog = document.querySelector('#developer-dialog');
+document.querySelector('#system-descriptions-open').addEventListener('click', () => { renderSystemDescriptions(); systemDescriptionsDialog.showModal(); });
+document.querySelector('#descriptions-search').addEventListener('input', renderSystemDescriptions);
+document.querySelector('#developer-menu-open').addEventListener('click', async () => { developerDialog.showModal(); await refreshDeveloperPanel(); });
+document.querySelector('#developer-refresh').addEventListener('click', refreshDeveloperPanel);
+document.querySelector('#developer-copy').addEventListener('click', async () => {
+  const diagnostics = await refreshDeveloperPanel();
+  const report = JSON.stringify({ appVersion: CURRENT_VERSION, diagnostics, recentErrors: recentAppErrors }, null, 2);
+  try { await navigator.clipboard.writeText(report); showToast('Relatório técnico copiado.'); }
+  catch { showToast('A cópia não está disponível neste navegador. Tente novamente em uma origem segura.'); }
+});
+document.querySelector('#setting-dev-debug').addEventListener('change', (event) => {
+  settings.devMode = event.target.checked;
+  try { localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings)); } catch { /* Debug preference still applies for this session. */ }
+  showToast(settings.devMode ? 'Logs detalhados ativos no próximo jogo.' : 'Logs detalhados desativados.');
+});
+document.querySelectorAll('[data-dialog-close]').forEach((button) => button.addEventListener('click', () => document.querySelector(`#${button.dataset.dialogClose}`).close()));
+for (const dialog of [systemDescriptionsDialog, developerDialog]) {
+  dialog.addEventListener('click', (event) => { if (event.target === dialog) dialog.close(); });
+  dialog.addEventListener('close', () => showPlayerChrome(true));
+}
+document.querySelector('#bios-only-help').addEventListener('click', showBiosOnlyExplanation);
+fullscreenButton.addEventListener('click', toggleFullscreen);
+document.querySelector('#library-search').addEventListener('input', renderLibrary);
+document.querySelector('#library-sort').addEventListener('change', renderLibrary);
+document.querySelectorAll('[data-library-filter]').forEach((button) => {
+  button.addEventListener('click', () => {
+    libraryFilter = button.dataset.libraryFilter;
+    document.querySelectorAll('[data-library-filter]').forEach((item) => item.classList.toggle('is-active', item === button));
+    renderLibrary();
+  });
+});
+document.querySelectorAll('.nav-link').forEach((link) => {
+  link.addEventListener('click', () => {
+    document.querySelectorAll('.nav-link').forEach((item) => item.classList.toggle('is-current', item === link));
+  });
+});
+
+settingsForm.addEventListener('submit', (event) => {
+  if (event.submitter?.value !== 'save') return;
+  event.preventDefault();
+  const previous = settings;
+  settings = getSettingsFromForm();
+  try { localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings)); } catch { /* Preferences still work until this app session ends. */ }
+  applyLiveSettings();
+  settingsDialog.close('save');
+  const restartNeeded = settings.touchControls !== previous.touchControls
+    || settings.layout !== previous.layout
+    || settings.volume !== previous.volume
+    || settings.devMode !== previous.devMode;
+  showToast(restartNeeded
+    ? 'Preferências salvas. Controles, volume e logs técnicos entram no próximo jogo.'
+    : 'Preferências salvas neste aparelho.');
+  if (!settings.keepAwake) {
+    wakeLock?.release?.();
+    wakeLock = null;
+  } else if (gameRunning) requestWakeLock();
+});
+settingsDialog.addEventListener('close', () => showPlayerChrome(true));
+volumeInput.addEventListener('input', () => {
+  volumeValue.value = `${volumeInput.value}%`;
+  volumeValue.textContent = `${volumeInput.value}%`;
+});
+
+document.addEventListener('fullscreenchange', () => {
+  if (!document.fullscreenElement) {
+    setNativeImmersive(false);
+    screen.orientation?.unlock?.();
+  } else setNativeImmersive(true);
+  syncImmersiveChrome();
+  updateFullscreenButton();
+});
+document.addEventListener('webkitfullscreenchange', updateFullscreenButton);
+
+window.addEventListener('message', async (event) => {
+  const frame = mount.querySelector('iframe');
+  if (!frame || event.source !== frame.contentWindow || event.data?.id !== currentLaunch) return;
+  if (event.data?.type === 'sixteenbit-player-activity') {
+    showPlayerChrome();
+  } else if (event.data?.type === 'sixteenbit-emulator-ready') {
+    playerStatus.textContent = 'JOGO PRONTO · TOQUE EM PLAY';
+    controlHint.textContent = 'TOQUE EM PLAY PARA COMEÇAR';
+    playerLoader.hidden = true;
+  } else if (event.data?.type === 'sixteenbit-game-started') {
+    const firstStart = !gameRunning;
+    gameRunning = true;
+    playerStatus.textContent = 'EM EXECUÇÃO';
+    controlHint.textContent = 'A/B/C · CONTROLE · TECLADO';
+    await requestWakeLock();
+    if (firstStart && currentRecordId) {
+      try {
+        const game = await dbRequest('readonly', 'get', currentRecordId);
+        if (game) {
+          game.lastPlayed = Date.now();
+          game.playCount = (game.playCount || 0) + 1;
+          await dbRequest('readwrite', 'put', game);
+          await renderLibrary();
+        }
+      } catch { /* A running game does not depend on the library stats. */ }
+    }
+  } else if (event.data?.type === 'sixteenbit-runtime-error') rememberAppError(`EmulatorJS · ${event.data.message}`);
+  else if (event.data?.type === 'sixteenbit-load-error') showPlayerError('Não foi possível abrir ejs-data/loader.js, que acompanha o app. Feche e reabra o emulador.');
+});
+
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible' && gameRunning) requestWakeLock();
+});
+document.addEventListener('pointerdown', (event) => {
+  if (settings.haptics && event.pointerType === 'touch' && navigator.vibrate) navigator.vibrate(8);
+}, { passive: true });
+playerView.addEventListener('pointerdown', showPlayerChrome, { passive: true });
+document.addEventListener('keydown', (event) => {
+  if (event.key === 'Escape' && document.fullscreenElement) {
+    setNativeImmersive(false);
+    screen.orientation?.unlock?.();
+  }
+});
+document.addEventListener('backbutton', (event) => {
+  event.preventDefault?.();
+  if (developerDialog.open) developerDialog.close();
+  else if (systemDescriptionsDialog.open) systemDescriptionsDialog.close();
+  else if (settingsDialog.open) settingsDialog.close();
+  else if (document.fullscreenElement || nativeImmersive) toggleFullscreen();
+  else if (!playerView.hidden) closePlayer();
+  else window.history.back();
+});
+
+document.addEventListener('dragenter', (event) => {
+  if (!event.dataTransfer?.types.includes('Files')) return;
+  event.preventDefault();
+  dragDepth += 1;
+  document.body.classList.add('is-dragging');
+});
+document.addEventListener('dragover', (event) => {
+  if (event.dataTransfer?.types.includes('Files')) event.preventDefault();
+});
+document.addEventListener('dragleave', (event) => {
+  if (!event.dataTransfer?.types.includes('Files')) return;
+  dragDepth = Math.max(0, dragDepth - 1);
+  if (!dragDepth) document.body.classList.remove('is-dragging');
+});
+document.addEventListener('drop', async (event) => {
+  if (!event.dataTransfer?.files.length) return;
+  event.preventDefault();
+  dragDepth = 0;
+  document.body.classList.remove('is-dragging');
+  const files = Array.from(event.dataTransfer.files);
+  await importFiles(files);
+  if (SYSTEMS[selectedSystem]?.kind !== 'external' && files.length === 1 && supportsGame(files[0])) await playFromLibrary(gameId(files[0], systemForFile(files[0])));
+});
+
+window.addEventListener('pagehide', () => {
+  if (currentObjectUrl) URL.revokeObjectURL(currentObjectUrl);
+  for (const url of currentBiosUrls) URL.revokeObjectURL(url);
+  wakeLock?.release?.();
+});
+
+for (const [id, system] of Object.entries(SYSTEMS)) {
+  const option = document.createElement('option'); option.value = id; option.textContent = system.name; systemSelect.append(option);
+}
+systemSelect.value = selectedSystem;
+const pickerSearch = document.querySelector('#system-picker-search');
+const pickerResults = document.querySelector('#system-picker-results');
+const pickerCategories = document.querySelector('#system-picker-categories');
+let activeSystemGroup = 'Todos';
+function renderSystemPicker() {
+  const query = pickerSearch.value.trim().toLocaleLowerCase('pt-BR');
+  const groups = ['Todos', ...Object.keys(SYSTEM_GROUPS)];
+  pickerCategories.innerHTML = groups.map((group) => `<button type="button" class="picker-category${activeSystemGroup === group ? ' is-active' : ''}" data-picker-group="${group}">${group}</button>`).join('');
+  const entries = Object.entries(SYSTEMS).filter(([id, system]) => {
+    const group = Object.entries(SYSTEM_GROUPS).find(([, ids]) => ids.includes(id))?.[0] || 'Outros';
+    return (activeSystemGroup === 'Todos' || activeSystemGroup === group) && `${system.name} ${SYSTEM_SUMMARIES[id] || ''} ${group}`.toLocaleLowerCase('pt-BR').includes(query);
+  });
+  document.querySelector('#system-picker-count').textContent = `${entries.length} sistemas · ${Object.values(SYSTEMS).filter((system) => system.kind !== 'external').length} integrados`;
+  pickerResults.innerHTML = entries.map(([id, system]) => {
+    const external = system.kind === 'external';
+    const badge = external ? 'EXTERNO' : (system.threaded ? 'DESEMPENHO' : (system.biosKey || system.biosKeys ? 'BIOS' : 'INTEGRADO'));
+    return `<button type="button" class="picker-system${selectedSystem === id ? ' is-selected' : ''}" data-picker-system="${id}" aria-pressed="${selectedSystem === id}"><span class="picker-system-top"><span class="picker-system-icon" aria-hidden="true">${external ? '↗' : (system.core ? '▣' : '◈')}</span><span class="picker-badge${external ? ' is-external' : ''}">${badge}</span></span><strong>${system.name}</strong><small>${SYSTEM_SUMMARIES[id] || (external ? 'Abre uma solução externa' : 'Núcleo EmulatorJS')}</small></button>`;
+  }).join('') || '<p class="picker-empty">Nenhum sistema encontrado. Tente outro nome.</p>';
+}
+document.querySelector('#system-picker-open').addEventListener('click', () => { renderSystemPicker(); systemPicker.showModal(); pickerSearch.focus(); });
+document.querySelector('#system-picker-close').addEventListener('click', () => systemPicker.close());
+pickerSearch.addEventListener('input', renderSystemPicker);
+pickerCategories.addEventListener('click', (event) => { const button = event.target.closest('[data-picker-group]'); if (!button) return; activeSystemGroup = button.dataset.pickerGroup; renderSystemPicker(); });
+pickerResults.addEventListener('click', (event) => {
+  const card = event.target.closest('[data-picker-system]'); if (!card) return;
+  systemSelect.value = card.dataset.pickerSystem;
+  systemSelect.dispatchEvent(new Event('change', { bubbles: true }));
+  systemPicker.close();
+});
+systemPicker.addEventListener('click', (event) => { if (event.target === systemPicker) systemPicker.close(); });
+function updateSystemActions() {
+  const externalSystem = SYSTEMS[selectedSystem]?.kind === 'external';
+  const actionName = selectedSystem === 'psvita' ? 'Obter Vita3K' : 'Abrir player de PS2';
+  chooseButton.innerHTML = externalSystem ? `<span aria-hidden="true">↗</span> ${actionName}` : '<span aria-hidden="true">▶</span> Abrir uma ROM';
+  libraryImportButton.disabled = externalSystem;
+  libraryImportButton.title = externalSystem ? 'Este sistema abre em outro app ou página' : '';
+  document.querySelector('#system-picker-current').textContent = SYSTEMS[selectedSystem]?.name || 'Escolher sistema';
+}
+updateSystemActions();
+systemSelect.addEventListener('change', () => {
+  selectSystem(systemSelect.value);
+});
+document.querySelectorAll('[data-external-system-link]').forEach((link) => {
+  link.addEventListener('click', (event) => {
+    event.preventDefault();
+    openExternalPlayer(link.href);
+  });
+});
+for (const [inputId, key, statusId] of [
+  ['setting-ps1-bios','ps1','ps1-bios-status'],
+  ['setting-segacd-bios','segacd','segacd-bios-status'],
+  ['setting-saturn-bios','saturn','saturn-bios-status'],
+  ['setting-mastersystem-bios','mastersystem','mastersystem-bios-status'],
+  ['setting-gamegear-bios','gamegear','gamegear-bios-status'],
+  ['setting-gb-bios','gb','gb-bios-status'],
+  ['setting-gbc-bios','gbc','gbc-bios-status'],
+  ['setting-gba-bios','gba','gba-bios-status'],
+  ['setting-nds-bios7','nds-bios7','nds-bios7-status'],
+  ['setting-nds-bios9','nds-bios9','nds-bios9-status'],
+  ['setting-nds-firmware','nds-firmware','nds-firmware-status'],
+  ['setting-3do-bios','3do','bios-3do-status'],
+  ['setting-coleco-bios','coleco','coleco-bios-status'],
+  ['setting-lynx-bios','lynx','lynx-bios-status'],
+  ['setting-atari7800-bios','atari7800','atari7800-bios-status'],
+  ['setting-dc-boot-bios','dreamcast-boot','dc-boot-bios-status'],
+  ['setting-dc-flash-bios','dreamcast-flash','dc-flash-bios-status'],
+  ['setting-amiga-bios','amiga','amiga-bios-status'],
+  ['setting-pcfx-bios','pcfx','pcfx-bios-status'],
+]) {
+  const input = document.querySelector(`#${inputId}`);
+  input.addEventListener('change', async () => {
+    const file = input.files?.[0]; if (!file) return;
+    if (key.startsWith('dreamcast-') && fileExtension(file) !== 'bin') {
+      showToast('O arquivo de BIOS do Dreamcast precisa terminar em .bin.');
+      input.value = '';
+      return;
+    }
+    if (key === 'ps1' && !['bin','bios'].includes(fileExtension(file))) {
+      showToast('A BIOS do PS1 precisa ser um arquivo .bin ou .bios.');
+      input.value = '';
+      return;
+    }
+    try { await biosRequest('readwrite','put',file,key); document.getElementById(statusId).textContent = `BIOS salva: ${file.name}`; showToast('BIOS salva somente neste aparelho.'); }
+    catch { showToast('Não foi possível salvar a BIOS; confira o espaço disponível.'); }
+    input.value = '';
+  });
+}
+Promise.all([
+  biosRequest('readonly','get','ps1'),
+  biosRequest('readonly','get','segacd'),
+  biosRequest('readonly','get','saturn'),
+  biosRequest('readonly','get','mastersystem'),
+  biosRequest('readonly','get','gamegear'),
+  biosRequest('readonly','get','gb'),
+  biosRequest('readonly','get','gbc'),
+  biosRequest('readonly','get','gba'),
+  biosRequest('readonly','get','nds-bios7'),
+  biosRequest('readonly','get','nds-bios9'),
+  biosRequest('readonly','get','nds-firmware'),
+  biosRequest('readonly','get','3do'),
+  biosRequest('readonly','get','coleco'),
+  biosRequest('readonly','get','lynx'),
+  biosRequest('readonly','get','atari7800'),
+  biosRequest('readonly','get','dreamcast-boot'),
+  biosRequest('readonly','get','dreamcast-flash'),
+  biosRequest('readonly','get','amiga'),
+  biosRequest('readonly','get','pcfx'),
+]).then(([ps1,cd,saturn,master,gear,gb,gbc,gba,ndsBios7,ndsBios9,ndsFirmware,bios3do,biosColeco,biosLynx,biosAtari7800,dcBoot,dcFlash,amiga,pcfx]) => {
+  if (ps1) document.querySelector('#ps1-bios-status').textContent = 'BIOS do PS1 salva neste aparelho';
+  if (cd) document.querySelector('#segacd-bios-status').textContent = 'BIOS do Sega CD salva neste aparelho';
+  if (saturn) document.querySelector('#saturn-bios-status').textContent = 'BIOS do Saturn salva neste aparelho';
+  if (master) document.querySelector('#mastersystem-bios-status').textContent = 'BIOS do Master System salva neste aparelho';
+  if (gear) document.querySelector('#gamegear-bios-status').textContent = 'BIOS do Game Gear salva neste aparelho';
+  if (gb) document.querySelector('#gb-bios-status').textContent = 'BIOS do Game Boy salva neste aparelho';
+  if (gbc) document.querySelector('#gbc-bios-status').textContent = 'BIOS do Game Boy Color salva neste aparelho';
+  if (gba) document.querySelector('#gba-bios-status').textContent = 'BIOS do Game Boy Advance salva neste aparelho';
+  if (ndsBios7) document.querySelector('#nds-bios7-status').textContent = 'bios7.bin salvo neste aparelho';
+  if (ndsBios9) document.querySelector('#nds-bios9-status').textContent = 'bios9.bin salvo neste aparelho';
+  if (ndsFirmware) document.querySelector('#nds-firmware-status').textContent = 'firmware.bin salvo neste aparelho';
+  if (bios3do) document.getElementById('bios-3do-status').textContent = 'BIOS do 3DO salva neste aparelho';
+  if (biosColeco) document.querySelector('#coleco-bios-status').textContent = 'BIOS da ColecoVision salva neste aparelho';
+  if (biosLynx) document.querySelector('#lynx-bios-status').textContent = 'lynxboot.img salvo neste aparelho';
+  if (biosAtari7800) document.querySelector('#atari7800-bios-status').textContent = 'BIOS do Atari 7800 salva neste aparelho';
+  if (dcBoot) document.querySelector('#dc-boot-bios-status').textContent = 'dc_boot.bin salvo neste aparelho';
+  if (dcFlash) document.querySelector('#dc-flash-bios-status').textContent = 'dc_flash.bin salvo neste aparelho';
+  if (amiga) document.querySelector('#amiga-bios-status').textContent = 'Kickstart salvo neste aparelho';
+  if (pcfx) document.querySelector('#pcfx-bios-status').textContent = 'BIOS do PC-FX salva neste aparelho';
+}).catch(() => {});
+applyLiveSettings();
+populateSettingsForm();
+updateFullscreenButton();
+renderLibrary();
+
+if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+      const reloadKey = 'sixteenbit-coi-reload-v1';
+      if (sessionStorage.getItem(reloadKey) === 'done') return;
+      sessionStorage.setItem(reloadKey, 'done');
+      location.reload();
+    });
+    navigator.serviceWorker.register(new URL('sw.js', APP_BASE_URL).href).catch(() => {});
+  });
+}

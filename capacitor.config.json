@@ -1,0 +1,8 @@
+{
+  "appId": "com.codex.sixteenbit",
+  "appName": "16-Bit Arcade",
+  "webDir": "www",
+  "server": {
+    "androidScheme": "https"
+  }
+}

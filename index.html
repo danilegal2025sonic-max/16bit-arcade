@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="theme-color" content="#0b0c11">
+    <meta name="description" content="Sua coleção de jogos retrô em um emulador para computador e celular.">
+    <title>16-Bit Arcade — v2.2.2</title>
+    <link rel="icon" href="./icon.svg" type="image/svg+xml">
+    <link rel="manifest" href="./manifest.webmanifest">
+    <link rel="stylesheet" href="./styles.css">
+  </head>
+  <body>
+    <div class="boot-splash" id="boot-splash" aria-hidden="true"><div class="boot-splash-content"><div class="boot-splash-mark"><span></span><span></span><span></span></div><strong>16<span>BIT</span></strong><small>ARCADE SYSTEM</small><div class="boot-progress"><i></i></div><p>PREPARANDO SEU ARCADE</p></div></div>
+    <div class="home-shell" id="home-shell">
+      <header class="topbar">
+        <a class="brand" href="#inicio" aria-label="16-Bit, início">
+          <span class="brand-mark" aria-hidden="true"><span></span><span></span><span></span></span>
+          <span class="brand-name">16<span>BIT</span><small>ARCADE</small></span>
+        </a>
+        <nav class="main-nav" aria-label="Navegação principal">
+          <a class="nav-link is-current" href="#inicio">Início</a>
+          <a class="nav-link" href="#biblioteca">Biblioteca</a>
+          <a class="nav-link" href="#recursos">Recursos</a>
+        </nav>
+        <button class="top-settings" id="settings-open" type="button" aria-label="Abrir configurações">
+          <span aria-hidden="true">⚙</span><span class="settings-label">Ajustes</span>
+        </button>
+      </header>
+
+      <main id="inicio">
+        <section class="hero">
+          <div class="hero-copy">
+            <p class="eyebrow"><span class="eyebrow-dot"></span> ARCADE MULTI-SISTEMA · V2.2.2</p>
+            <h1>Os clássicos<br>voltaram <em>pra casa.</em></h1>
+            <p class="hero-text">Sua coleção retrô num só lugar. Escolha o sistema, adicione seus jogos e aperte start.</p>
+            <div class="system-select-label"><span>SISTEMA</span><button class="system-picker-trigger" id="system-picker-open" type="button" aria-haspopup="dialog" aria-controls="system-picker-dialog"><span id="system-picker-current">Sega Mega Drive</span><span aria-hidden="true">⌄</span></button><select id="system-select" class="system-select-native" aria-label="Sistema selecionado" tabindex="-1" aria-hidden="true"></select></div>
+            <div class="hero-actions">
+              <button class="primary-button" id="choose-game" type="button"><span aria-hidden="true">▶</span> Abrir uma ROM</button>
+              <a class="secondary-button" href="#biblioteca">Minha biblioteca <span aria-hidden="true">↓</span></a>
+            </div>
+            <input id="rom-file" type="file" accept=".md,.gen,.bin,.smd,.rom,.32x,.iso,.chd,.cue,.zip,.pbp,.cso,.zso,.cdi,.gdi,.elf,.img,.sms,.gg,.gb,.gbc,.gba,.z64,.n64,.v64,.d64,.d71,.d81,.t64,.tap,.crt,.prg,.p00,.adf,.adz,.dms,.ipf,.lha" hidden>
+            <div class="hero-footnote"><span class="shield-icon" aria-hidden="true">◈</span> Seus arquivos ficam no aparelho. ROMs não são enviadas.</div>
+          </div>
+          <div class="hero-art" aria-label="Arte de console retrô">
+            <div class="hero-art-grid"></div>
+            <div class="hero-sun"></div>
+            <div class="hero-game-title"><span>16-BIT</span><strong>POWER<br>ON.</strong></div>
+            <div class="hero-disc disc-one"></div><div class="hero-disc disc-two"></div>
+            <div class="hero-console-mini">
+              <div class="mini-slot"></div><div class="mini-brand">16<span>BIT</span></div>
+              <div class="mini-dot"></div><div class="mini-port"></div>
+            </div>
+            <div class="hero-art-caption"><span>GENESIS MODE</span><span>199X — NOW</span></div>
+          </div>
+        </section>
+
+        <section class="stat-strip" aria-label="Resumo da biblioteca">
+          <div class="stat-cell"><span class="stat-icon">▣</span><div><strong id="library-count">0</strong><small>JOGOS NA BIBLIOTECA</small></div></div>
+          <div class="stat-cell"><span class="stat-icon">♥</span><div><strong id="favorite-count">0</strong><small>SEUS FAVORITOS</small></div></div>
+          <div class="stat-cell"><span class="stat-icon">◷</span><div><strong id="recent-game-label">—</strong><small>ÚLTIMO JOGADO</small></div></div>
+          <div class="stat-note"><span class="online-led"></span> PRONTO PARA JOGAR</div>
+        </section>
+
+        <section class="library-section" id="biblioteca" aria-labelledby="library-title">
+          <div class="section-heading">
+            <div><p class="section-kicker">SUA COLEÇÃO</p><h2 id="library-title">Biblioteca <span>de jogos</span></h2></div>
+            <button class="add-game-button" id="library-import-open" type="button"><span aria-hidden="true">＋</span> Adicionar jogos</button>
+            <input id="library-import" type="file" accept=".md,.gen,.bin,.smd,.rom,.32x,.iso,.chd,.cue,.zip,.pbp,.cso,.zso,.cdi,.gdi,.elf,.img,.sms,.gg,.gb,.gbc,.gba,.z64,.n64,.v64,.d64,.d71,.d81,.t64,.tap,.crt,.prg,.p00,.adf,.adz,.dms,.ipf,.lha" multiple hidden>
+          </div>
+          <div class="library-toolbar">
+            <div class="library-filters" role="group" aria-label="Filtrar biblioteca">
+              <button class="filter-chip is-active" type="button" data-library-filter="all">Todos <span id="all-count">0</span></button>
+              <button class="filter-chip" type="button" data-library-filter="favorites">Favoritos <span id="filter-favorite-count">0</span></button>
+            </div>
+            <div class="library-tools">
+              <label class="search-box"><span aria-hidden="true">⌕</span><input id="library-search" type="search" placeholder="Buscar jogo..." autocomplete="off"></label>
+              <label class="sort-box"><span class="sr-only">Ordenar biblioteca</span><select id="library-sort"><option value="recent">Recentes</option><option value="name">Nome A–Z</option><option value="played">Mais jogados</option></select></label>
+            </div>
+          </div>
+          <div class="game-grid" id="library-list" aria-live="polite"></div>
+          <div class="empty-library" id="empty-library">
+            <div class="empty-cartridge" aria-hidden="true"><span></span></div>
+            <h3>Seu próximo clássico está aqui</h3>
+            <p>Adicione jogos dos sistemas compatíveis para montar sua coleção neste aparelho.</p>
+            <button class="primary-button small-button" id="empty-import" type="button">＋ Adicionar primeira ROM</button>
+            <small>Formatos variam por sistema · ZIP pode reunir os arquivos de CD</small>
+          </div>
+          <div class="no-results" id="no-results" hidden>Nenhum jogo combina com essa busca.</div>
+        </section>
+
+        <section class="feature-section" id="recursos" aria-labelledby="features-title">
+          <div class="section-heading feature-heading"><div><p class="section-kicker">DO JEITO QUE VOCÊ JOGA</p><h2 id="features-title">Seu console, <span>suas regras.</span></h2></div><span class="feature-aside">16-BIT / PLAYER ONE</span></div>
+          <div class="feature-grid">
+            <article class="feature-card"><span class="feature-number">01</span><span class="feature-symbol">▤</span><h3>Uma coleção só sua</h3><p>ROMs favoritas ficam guardadas localmente e prontas para reabrir.</p></article>
+            <article class="feature-card"><span class="feature-number">02</span><span class="feature-symbol">⌗</span><h3>Controle no seu ritmo</h3><p>Use os botões virtuais no toque, um controle Bluetooth ou teclado.</p></article>
+            <article class="feature-card"><span class="feature-number">03</span><span class="feature-symbol">◩</span><h3>Partida imersiva</h3><p>Amplie o jogo para ocupar a tela inteira e esconda as barras do sistema.</p></article>
+            <article class="feature-card"><span class="feature-number">04</span><span class="feature-symbol">↻</span><h3>Seu estilo, salvo</h3><p>Escolha formato de tela, efeito CRT, volume, cores e vibração.</p></article>
+          </div>
+          <div class="systems-status" aria-label="Sistemas e compatibilidade"><span>SEGA, PS1, PSP, GB/GBC/GBA, N64, NES, SNES, DS <b>NÚCLEOS NO APP</b></span><span>ATARI 2600 / 5200 / 7800 / LYNX / JAGUAR <b>INCLUÍDOS</b></span><span>VIRTUAL BOY / 3DO / COLECOVISION <b>INCLUÍDOS</b></span><span>PC ENGINE / NEO GEO POCKET / WONDERSWAN <b>INCLUÍDOS</b></span><span>ARCADE · FBNEO / MAME 2003 <b>INCLUÍDOS</b><span>PC MS-DOS <b>DOSBOX PURE · THREADS</b></span></span><a href="https://tabstationtoo.github.io/TabStationToo/" data-external-system-link>PS2 <b>PLAYER EXPERIMENTAL · PC</b></a><a href="https://vita3k.org/download.html" data-external-system-link>PS VITA <b>VITA3K EXTERNO</b></a><span>DREAMCAST <b>WASM EXPERIMENTAL</b></span></div>
+        </section>
+      </main>
+      <footer class="site-footer"><a class="brand footer-brand" href="#inicio"><span class="brand-name">16<span>BIT</span><small>ARCADE</small></span></a><span>FEITO PARA QUEM CRESCEU JOGANDO.</span><span>SEUS JOGOS. SUA PARTIDA.</span></footer>
+    </div>
+
+    <section class="player-view" id="player-view" hidden aria-label="Emulador multi-sistema">
+      <header class="player-topbar">
+        <button class="player-back" id="player-back" type="button"><span aria-hidden="true">←</span><span>Biblioteca</span></button>
+        <div class="player-game-title"><span class="player-live"></span><div><strong id="player-game-name">Carregando jogo</strong><small id="player-status">PREPARANDO EMULADOR</small></div></div>
+        <div class="player-actions">
+          <button class="player-action" id="player-settings-open" type="button" aria-label="Ajustes do jogador" title="Ajustes">⚙</button>
+          <button class="player-action full-action" id="fullscreen-toggle" type="button" aria-label="Entrar na tela cheia" title="Tela cheia"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 4H4v4M16 4h4v4M20 16v4h-4M4 16v4h4"/></svg></button>
+        </div>
+      </header>
+      <div class="player-screen" id="player-screen">
+        <div class="player-loader" id="player-loader"><div class="loader-ring"></div><strong>Preparando o jogo</strong><span>Conectando ao núcleo</span></div>
+        <div class="emulator-mount" id="emulator-mount" hidden></div>
+      </div>
+      <footer class="player-footer"><span class="player-brand">16<span>BIT</span> <i id="player-system-label">SEGA</i></span><span id="control-hint">TOQUE, TECLADO OU CONTROLE</span><span class="player-shortcut">SAIR <kbd>ESC</kbd></span></footer>
+    </section>
+
+    <dialog class="system-picker-dialog" id="system-picker-dialog" aria-labelledby="system-picker-title">
+      <div class="system-picker-panel">
+        <div class="settings-heading"><div><p class="section-kicker">CATÁLOGO DE SISTEMAS</p><h2 id="system-picker-title">Escolha seu console.</h2><p class="picker-count" id="system-picker-count"></p></div><button class="settings-close" id="system-picker-close" type="button" aria-label="Fechar escolha de sistema">×</button></div>
+        <label class="picker-search"><span aria-hidden="true">⌕</span><input id="system-picker-search" type="search" placeholder="Buscar console ou fabricante" autocomplete="off"></label>
+        <div class="picker-categories" id="system-picker-categories" role="group" aria-label="Categorias de sistemas"></div>
+        <div class="picker-results" id="system-picker-results" aria-live="polite"></div>
+        <p class="picker-footnote">Alguns sistemas precisam de BIOS ou de um app externo. O emulador não inclui jogos, BIOS ou firmware.</p>
+      </div>
+    </dialog>
+    <dialog class="settings-dialog" id="settings-dialog" aria-labelledby="settings-title">
+      <form method="dialog" class="settings-panel" id="settings-form">
+        <div class="settings-heading"><div><p class="section-kicker">AJUSTES DE JOGO</p><h2 id="settings-title">Do seu jeito.</h2></div><button class="settings-close" value="cancel" aria-label="Fechar configurações">×</button></div>
+        <div class="settings-tools"><button type="button" id="system-descriptions-open"><span aria-hidden="true">ⓘ</span><span><strong>Descrições dos sistemas</strong><small>Conheça os consoles e computadores do catálogo</small></span><span aria-hidden="true">›</span></button><button type="button" id="developer-menu-open"><span aria-hidden="true">⌘</span><span><strong>Menu de desenvolvedor</strong><small>Diagnóstico, compatibilidade e logs técnicos</small></span><span aria-hidden="true">›</span></button></div>
+        <label class="setting-row" for="setting-theme"><span><strong>Cor do arcade</strong><small>Escolha a cor que ilumina a interface</small></span><select id="setting-theme"><option value="lime">Verde retrô</option><option value="violet">Roxo arcade</option><option value="blue">Azul neon</option></select></label>
+        <label class="setting-row" for="setting-aspect"><span><strong>Formato da tela</strong><small>Escolha o espaço usado pelo jogo</small></span><select id="setting-aspect"><option value="classic">Clássico · 4:3</option><option value="wide">Amplo · 16:9</option></select></label>
+        <label class="setting-row" for="setting-filter"><span><strong>Efeito de tela</strong><small>Linhas CRT suaves de TV antiga</small></span><select id="setting-filter"><option value="off">Desativado</option><option value="crt">Linhas CRT</option></select></label>
+        <label class="setting-row" for="setting-controls"><span><strong>Controles na tela</strong><small>Botões virtuais do sistema selecionado</small></span><input id="setting-controls" type="checkbox" class="switch-input"></label>
+        <label class="setting-row" for="setting-layout"><span><strong>Controle virtual</strong><small>Três ou seis botões frontais</small></span><select id="setting-layout"><option value="three">3 botões · clássico</option><option value="six">6 botões</option></select></label>
+        <label class="setting-row" for="setting-volume"><span><strong>Volume inicial</strong><small>Também pode ajustar durante o jogo</small></span><span class="range-wrap"><input id="setting-volume" type="range" min="0" max="100" step="5"><output id="volume-value">80%</output></span></label>
+        <label class="setting-row" for="setting-haptics"><span><strong>Resposta tátil</strong><small>Vibração curta ao tocar nos botões</small></span><input id="setting-haptics" type="checkbox" class="switch-input"></label>
+        <label class="setting-row" for="setting-wake"><span><strong>Manter tela ligada</strong><small>Durante as partidas, se o aparelho permitir</small></span><input id="setting-wake" type="checkbox" class="switch-input"></label>
+        <label class="setting-row" for="setting-startup-sound"><span><strong>Som ao iniciar uma ROM</strong><small>Toque curto de inicialização retrô</small></span><input id="setting-startup-sound" type="checkbox" class="switch-input"></label>
+        <div class="bios-settings"><p class="section-kicker">ARQUIVOS DE SISTEMA</p><button class="bios-only-help" id="bios-only-help" type="button">Por que não consigo iniciar só a BIOS?</button><p>As BIOS são opcionais para Game Boy, Game Boy Color, GBA, Master System e Game Gear, e ficam só neste aparelho. PS1 depende de uma BIOS compatível; Nintendo DS exige bios7.bin, bios9.bin e firmware.bin; ColecoVision e 3DO exigem BIOS; Atari Lynx e 7800 aceitam BIOS opcional. Dreamcast usa dc_boot.bin e dc_flash.bin; Amiga pode precisar de Kickstart. A BIOS é usada junto de uma ROM: este núcleo não inicia sem jogo. PS2 e PS Vita abrem soluções externas; o Vita3K oficial é outro app.</p><label for="setting-ps1-bios">Selecionar BIOS do PS1 <input id="setting-ps1-bios" type="file" accept=".bin,.bios"></label><small id="ps1-bios-status">Nenhuma BIOS salva</small><label for="setting-segacd-bios">Selecionar BIOS do Sega CD <input id="setting-segacd-bios" type="file" accept=".bin,.bios"></label><small id="segacd-bios-status">Nenhuma BIOS salva</small><label for="setting-saturn-bios">Selecionar BIOS do Saturn <input id="setting-saturn-bios" type="file" accept=".bin,.bios"></label><small id="saturn-bios-status">Nenhuma BIOS salva</small><label for="setting-mastersystem-bios">Selecionar BIOS do Master System <input id="setting-mastersystem-bios" type="file" accept=".sms,.bin"></label><small id="mastersystem-bios-status">Nenhuma BIOS salva · opcional</small><label for="setting-gamegear-bios">Selecionar BIOS do Game Gear <input id="setting-gamegear-bios" type="file" accept=".gg,.bin"></label><small id="gamegear-bios-status">Nenhuma BIOS salva · opcional</small><label for="setting-gb-bios">Selecionar BIOS do Game Boy <input id="setting-gb-bios" type="file" accept=".bin"></label><small id="gb-bios-status">Nenhuma BIOS salva · opcional</small><label for="setting-gbc-bios">Selecionar BIOS do Game Boy Color <input id="setting-gbc-bios" type="file" accept=".bin"></label><small id="gbc-bios-status">Nenhuma BIOS salva · opcional</small><label for="setting-gba-bios">Selecionar BIOS do Game Boy Advance <input id="setting-gba-bios" type="file" accept=".bin"></label><small id="gba-bios-status">Nenhuma BIOS salva · opcional</small><label for="setting-nds-bios7">Nintendo DS · bios7.bin <input id="setting-nds-bios7" type="file" accept=".bin"></label><small id="nds-bios7-status">Nenhum arquivo salvo</small><label for="setting-nds-bios9">Nintendo DS · bios9.bin <input id="setting-nds-bios9" type="file" accept=".bin"></label><small id="nds-bios9-status">Nenhum arquivo salvo</small><label for="setting-nds-firmware">Nintendo DS · firmware.bin <input id="setting-nds-firmware" type="file" accept=".bin"></label><small id="nds-firmware-status">Nenhum arquivo salvo</small><label for="setting-3do-bios">BIOS do 3DO <input id="setting-3do-bios" type="file" accept=".bin,.rom"></label><small id="bios-3do-status">BIOS obrigatória</small><label for="setting-coleco-bios">BIOS ColecoVision <input id="setting-coleco-bios" type="file" accept=".rom,.bin"></label><small id="coleco-bios-status">BIOS obrigatória</small><label for="setting-lynx-bios">BIOS Atari Lynx (lynxboot.img) <input id="setting-lynx-bios" type="file" accept=".img,.bin"></label><small id="lynx-bios-status">Arquivo opcional para compatibilidade</small><label for="setting-atari7800-bios">BIOS Atari 7800 (opcional) <input id="setting-atari7800-bios" type="file" accept=".rom,.bin"></label><small id="atari7800-bios-status">BIOS opcional</small><label for="setting-dc-boot-bios">Selecionar dc_boot.bin <input id="setting-dc-boot-bios" type="file" accept=".bin"></label><small id="dc-boot-bios-status">BIOS de inicialização não salva</small><label for="setting-dc-flash-bios">Selecionar dc_flash.bin <input id="setting-dc-flash-bios" type="file" accept=".bin"></label><small id="dc-flash-bios-status">BIOS flash não salva</small><label for="setting-amiga-bios">BIOS Kickstart do Amiga <input id="setting-amiga-bios" type="file" accept=".rom,.bin"></label><small id="amiga-bios-status">BIOS opcional conforme o jogo</small><label for="setting-pcfx-bios">BIOS do PC-FX <input id="setting-pcfx-bios" type="file" accept=".bin,.rom"></label><small id="pcfx-bios-status">BIOS opcional</small></div>
+        <p class="settings-note">Formato, cor e efeito mudam na hora. Controles, volume e logs de depuração valem ao iniciar o próximo jogo.</p>
+        <button class="settings-done" value="save">Salvar configurações</button>
+      </form>
+    </dialog>
+    <dialog class="system-descriptions-dialog" id="system-descriptions-dialog" aria-labelledby="system-descriptions-title"><div class="descriptions-panel"><div class="settings-heading"><div><p class="section-kicker">GUIA RÁPIDO</p><h2 id="system-descriptions-title">Descrições dos sistemas.</h2><p class="picker-count" id="descriptions-count"></p></div><button class="settings-close" type="button" data-dialog-close="system-descriptions-dialog" aria-label="Fechar descrições">×</button></div><label class="picker-search"><span aria-hidden="true">⌕</span><input id="descriptions-search" type="search" placeholder="Buscar um sistema" autocomplete="off"></label><div class="descriptions-list" id="descriptions-list"></div><p class="picker-footnote">Desempenho e compatibilidade variam conforme o jogo e o aparelho. ROMs, BIOS e firmware não acompanham o app.</p></div></dialog>
+    <dialog class="developer-dialog" id="developer-dialog" aria-labelledby="developer-title"><div class="developer-panel"><div class="settings-heading"><div><p class="section-kicker">FERRAMENTAS TÉCNICAS</p><h2 id="developer-title">Menu de desenvolvedor.</h2></div><button class="settings-close" type="button" data-dialog-close="developer-dialog" aria-label="Fechar menu de desenvolvedor">×</button></div><p class="developer-intro">Informações deste aparelho e do carregamento atual. O relatório não inclui ROMs, BIOS nem arquivos pessoais.</p><div class="developer-grid" id="developer-grid"></div><label class="setting-row developer-toggle" for="setting-dev-debug"><span><strong>Logs detalhados do EmulatorJS</strong><small>Usa o carregador de depuração na próxima inicialização de jogo</small></span><input id="setting-dev-debug" type="checkbox" class="switch-input"></label><section class="developer-log-section"><div><strong>Erros recentes do app</strong><small>Últimas falhas JavaScript desta sessão</small></div><pre id="developer-log" class="developer-log">Nenhum erro registrado nesta sessão.</pre></section><div class="developer-actions"><button class="secondary-button" id="developer-refresh" type="button">Atualizar diagnóstico</button><button class="primary-button" id="developer-copy" type="button">Copiar relatório</button></div></div></dialog>
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+    <script src="./app.js" defer></script>
+  </body>
+</html>
