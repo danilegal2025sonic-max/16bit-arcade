@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <meta name="theme-color" content="#0b0c11">
     <meta name="description" content="Sua coleção de jogos retrô em um emulador para computador e celular.">
-    <title>16-Bit Arcade — v4.0.0</title>
+    <title>16-Bit Arcade — Ultimate Update v5.0.0</title>
     <link rel="icon" href="./icon.svg" type="image/svg+xml">
     <link rel="manifest" href="./manifest.webmanifest">
     <link rel="stylesheet" href="./styles.css">
@@ -31,7 +31,7 @@
       <main id="inicio">
         <section class="hero">
           <div class="hero-copy">
-            <p class="eyebrow"><span class="eyebrow-dot"></span> ARCADE MULTI-SISTEMA · V4.0.0</p>
+            <p class="eyebrow"><span class="eyebrow-dot"></span> ARCADE MULTI-SISTEMA · ULTIMATE UPDATE · V5.0.0</p>
             <h1>Os clássicos<br>voltaram <em>pra casa.</em></h1>
             <p class="hero-text">Sua coleção retrô num só lugar. Escolha o sistema, adicione seus jogos e aperte start.</p>
             <div class="system-select-label"><span>SISTEMA</span><button class="system-picker-trigger" id="system-picker-open" type="button" aria-haspopup="dialog" aria-controls="system-picker-dialog"><span id="system-picker-current">Sega Mega Drive</span><span aria-hidden="true">⌄</span></button><select id="system-select" class="system-select-native" aria-label="Sistema selecionado" tabindex="-1" aria-hidden="true"></select></div>
@@ -42,16 +42,16 @@
             <input id="rom-file" type="file" accept=".md,.gen,.bin,.smd,.rom,.32x,.iso,.chd,.cue,.zip,.7z,.pbp,.cso,.zso,.cdi,.gdi,.elf,.img,.sms,.gg,.gb,.gbc,.gba,.z64,.n64,.v64,.d64,.d71,.d81,.t64,.tap,.crt,.prg,.p00,.adf,.adz,.dms,.ipf,.lha,.atr,.atx,.xex,.xfd,.dcm,.cas,.z80,.sna,.tzx,.pzx,.dsk,.udi,.trd,.cdt,.cpr,.voc,.sg,.sgd,.68k,.sgx,.wad" multiple hidden>
             <div class="hero-footnote"><span class="shield-icon" aria-hidden="true">◈</span> Seus arquivos ficam no aparelho. ROMs não são enviadas.</div>
           </div>
-          <div class="hero-art" aria-label="Arte de console retrô">
+          <div class="hero-art" id="hero-art" aria-label="Interface visual do sistema selecionado">
             <div class="hero-art-grid"></div>
             <div class="hero-sun"></div>
-            <div class="hero-game-title"><span>16-BIT</span><strong>POWER<br>ON.</strong></div>
+            <div class="hero-game-title"><span id="hero-art-family">SEGA</span><strong id="hero-art-system">GENESIS</strong><small id="hero-art-core">NÚCLEO SEGAMD</small></div>
             <div class="hero-disc disc-one"></div><div class="hero-disc disc-two"></div>
             <div class="hero-console-mini">
               <div class="mini-slot"></div><div class="mini-brand">16<span>BIT</span></div>
               <div class="mini-dot"></div><div class="mini-port"></div>
             </div>
-            <div class="hero-art-caption"><span>GENESIS MODE</span><span>199X — NOW</span></div>
+            <div class="hero-art-caption"><span>PERFIL DO SISTEMA</span><span id="hero-art-caption">CONTROLES ADAPTÁVEIS</span></div>
           </div>
         </section>
 
@@ -114,7 +114,7 @@
         </div>
       </header>
       <div class="player-screen" id="player-screen">
-        <div class="player-loader" id="player-loader"><div class="loader-ring"></div><strong>Preparando o jogo</strong><span>Conectando ao núcleo</span></div>
+        <div class="player-loader" id="player-loader"><div class="loader-ring"></div><strong>Preparando o jogo</strong><span>Conectando ao núcleo</span><button type="button" id="player-retry" class="primary-button small-button" hidden>Tentar novamente</button></div>
         <div class="emulator-mount" id="emulator-mount" hidden></div>
         <section class="player-keyboard" id="player-keyboard" aria-label="Teclado virtual" hidden>
           <div class="virtual-keyboard-heading"><strong>TECLADO VIRTUAL</strong><small>Segure uma tecla para mantê-la pressionada</small><button type="button" id="player-keyboard-close" aria-label="Fechar teclado virtual">×</button></div>
@@ -141,13 +141,15 @@
         <label class="setting-row" for="setting-aspect"><span><strong>Formato da tela</strong><small>Escolha o espaço usado pelo jogo</small></span><select id="setting-aspect"><option value="classic">Clássico · 4:3</option><option value="wide">Amplo · 16:9</option></select></label>
         <label class="setting-row" for="setting-filter"><span><strong>Efeito de tela</strong><small>Linhas CRT suaves de TV antiga</small></span><select id="setting-filter"><option value="off">Desativado</option><option value="crt">Linhas CRT</option></select></label>
         <label class="setting-row" for="setting-controls"><span><strong>Controles na tela</strong><small>Botões virtuais do sistema selecionado</small></span><input id="setting-controls" type="checkbox" class="switch-input"></label>
-        <label class="setting-row" for="setting-layout"><span><strong>Controle virtual</strong><small>Botões compactos ou expandidos</small></span><select id="setting-layout"><option value="three">Compacto · 2 ou 3 ações</option><option value="six">Expandido · até 6 ações</option></select></label><label class="setting-row" for="setting-pad-style"><span><strong>Direcional na tela</strong><small>Escolha entre cruz digital ou joystick analógico</small></span><select id="setting-pad-style"><option value="dpad">Cruz digital</option><option value="analog">Joystick analógico</option></select></label>
+        <label class="setting-row" for="setting-layout"><span><strong>Controle virtual</strong><small>Botões e formatos adaptados ao sistema</small></span><select id="setting-layout"><option value="three">Compacto · 2 ou 3 ações</option><option value="six">Expandido · até 6 ações</option></select></label><label class="setting-row" for="setting-pad-style"><span><strong>Direcional na tela</strong><small>Escolha entre cruz digital ou joystick analógico</small></span><select id="setting-pad-style"><option value="dpad">Cruz digital</option><option value="analog">Joystick analógico</option></select></label>
+        <label class="setting-range-row" for="setting-pad-scale"><span><strong>Tamanho dos botões</strong><output id="pad-scale-value">100%</output></span><input id="setting-pad-scale" type="range" min="75" max="130" step="5" value="100"><small>Ajusta o direcional e os botões de ação</small></label>
+        <label class="setting-range-row" for="setting-pad-opacity"><span><strong>Transparência dos controles</strong><output id="pad-opacity-value">78%</output></span><input id="setting-pad-opacity" type="range" min="35" max="100" step="5" value="80"><small>Deixe o jogo mais visível por baixo dos botões</small></label>
         <label class="setting-row" for="setting-volume"><span><strong>Volume inicial</strong><small>Também pode ajustar durante o jogo</small></span><span class="range-wrap"><input id="setting-volume" type="range" min="0" max="100" step="5"><output id="volume-value">80%</output></span></label>
         <label class="setting-row" for="setting-haptics"><span><strong>Resposta tátil</strong><small>Vibração curta ao tocar nos botões</small></span><input id="setting-haptics" type="checkbox" class="switch-input"></label>
         <label class="setting-row" for="setting-wake"><span><strong>Manter tela ligada</strong><small>Durante as partidas, se o aparelho permitir</small></span><input id="setting-wake" type="checkbox" class="switch-input"></label>
         <label class="setting-row" for="setting-startup-sound"><span><strong>Som ao iniciar uma ROM</strong><small>Toque curto de inicialização retrô</small></span><input id="setting-startup-sound" type="checkbox" class="switch-input"></label>
         <div class="bios-settings"><p class="section-kicker">ARQUIVOS DE SISTEMA</p><button class="bios-only-help" id="bios-only-help" type="button">Por que não consigo iniciar só a BIOS?</button><p>As BIOS são opcionais para Game Boy, Game Boy Color, GBA, Master System e Game Gear, e ficam só neste aparelho. PS1 depende de uma BIOS compatível; Nintendo DS exige bios7.bin, bios9.bin e firmware.bin; ColecoVision e 3DO exigem BIOS; Atari Lynx e 7800 aceitam BIOS opcional. Dreamcast usa dc_boot.bin e dc_flash.bin; jogos de CD da PC Engine podem precisar de BIOS; Amiga pode precisar de Kickstart. A BIOS é usada junto de uma ROM: este núcleo não inicia sem jogo. PS2 e PS Vita abrem soluções externas; o Vita3K oficial é outro app.</p><label for="setting-ps1-bios">Selecionar BIOS do PS1 <input id="setting-ps1-bios" type="file" accept=".bin,.bios"></label><small id="ps1-bios-status">Nenhuma BIOS salva</small><label for="setting-segacd-bios">Selecionar BIOS do Sega CD <input id="setting-segacd-bios" type="file" accept=".bin,.bios"></label><small id="segacd-bios-status">Nenhuma BIOS salva</small><label for="setting-saturn-bios">Selecionar BIOS do Saturn <input id="setting-saturn-bios" type="file" accept=".bin,.bios"></label><small id="saturn-bios-status">Nenhuma BIOS salva</small><label for="setting-mastersystem-bios">Selecionar BIOS do Master System <input id="setting-mastersystem-bios" type="file" accept=".sms,.bin"></label><small id="mastersystem-bios-status">Nenhuma BIOS salva · opcional</small><label for="setting-gamegear-bios">Selecionar BIOS do Game Gear <input id="setting-gamegear-bios" type="file" accept=".gg,.bin"></label><small id="gamegear-bios-status">Nenhuma BIOS salva · opcional</small><label for="setting-gb-bios">Selecionar BIOS do Game Boy <input id="setting-gb-bios" type="file" accept=".bin"></label><small id="gb-bios-status">Nenhuma BIOS salva · opcional</small><label for="setting-gbc-bios">Selecionar BIOS do Game Boy Color <input id="setting-gbc-bios" type="file" accept=".bin"></label><small id="gbc-bios-status">Nenhuma BIOS salva · opcional</small><label for="setting-gba-bios">Selecionar BIOS do Game Boy Advance <input id="setting-gba-bios" type="file" accept=".bin"></label><small id="gba-bios-status">Nenhuma BIOS salva · opcional</small><label for="setting-nds-bios7">Nintendo DS · bios7.bin <input id="setting-nds-bios7" type="file" accept=".bin"></label><small id="nds-bios7-status">Nenhum arquivo salvo</small><label for="setting-nds-bios9">Nintendo DS · bios9.bin <input id="setting-nds-bios9" type="file" accept=".bin"></label><small id="nds-bios9-status">Nenhum arquivo salvo</small><label for="setting-nds-firmware">Nintendo DS · firmware.bin <input id="setting-nds-firmware" type="file" accept=".bin"></label><small id="nds-firmware-status">Nenhum arquivo salvo</small><label for="setting-3do-bios">BIOS do 3DO <input id="setting-3do-bios" type="file" accept=".bin,.rom"></label><small id="bios-3do-status">BIOS obrigatória</small><label for="setting-coleco-bios">BIOS ColecoVision <input id="setting-coleco-bios" type="file" accept=".rom,.bin"></label><small id="coleco-bios-status">BIOS obrigatória</small><label for="setting-lynx-bios">BIOS Atari Lynx (lynxboot.img) <input id="setting-lynx-bios" type="file" accept=".img,.bin"></label><small id="lynx-bios-status">Arquivo opcional para compatibilidade</small><label for="setting-atari7800-bios">BIOS Atari 7800 (opcional) <input id="setting-atari7800-bios" type="file" accept=".rom,.bin"></label><small id="atari7800-bios-status">BIOS opcional</small><label for="setting-dc-boot-bios">Selecionar dc_boot.bin <input id="setting-dc-boot-bios" type="file" accept=".bin"></label><small id="dc-boot-bios-status">BIOS de inicialização não salva</small><label for="setting-dc-flash-bios">Selecionar dc_flash.bin <input id="setting-dc-flash-bios" type="file" accept=".bin"></label><small id="dc-flash-bios-status">BIOS flash não salva</small><label for="setting-amiga-bios">BIOS Kickstart do Amiga <input id="setting-amiga-bios" type="file" accept=".rom,.bin"></label><small id="amiga-bios-status">BIOS opcional conforme o jogo</small><label for="setting-pcfx-bios">BIOS do PC-FX <input id="setting-pcfx-bios" type="file" accept=".bin,.rom"></label><small id="pcfx-bios-status">BIOS opcional</small><label for="setting-pcecd-bios">BIOS de CD da PC Engine / TurboGrafx <input id="setting-pcecd-bios" type="file" accept=".bin,.pce"></label><small id="pcecd-bios-status">BIOS necessária para jogos de CD</small></div>
-        <p class="settings-note">Controles Bluetooth podem ser remapeados no menu do EmulatorJS durante uma partida. Formato, cor e efeito mudam na hora. Controles, volume e logs de depuração valem ao iniciar o próximo jogo.</p>
+        <p class="settings-note">Cada sistema recebe seu próprio tema e esquema de toque. Controles Bluetooth podem ser remapeados no menu do EmulatorJS. Tamanho, transparência, layout e direcional dos controles entram na próxima partida.</p>
         <button class="settings-done" value="save">Salvar configurações</button>
       </form>
     </dialog>

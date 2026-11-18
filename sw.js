@@ -1,8 +1,8 @@
 const BASE_URL = new URL(self.registration.scope);
 const CACHE_SCOPE_KEY = BASE_URL.pathname.replace(/[^a-z0-9]+/gi, '-').replace(/^-|-$/g, '') || 'root';
-const CACHE_NAME = `16bit-shell-${CACHE_SCOPE_KEY}-v14`;
-const EJS_PREFIX = new URL('EJSData/', BASE_URL).pathname;
-const EJS_CDN = 'https://cdn.emulatorjs.org/stable/data/';
+const CACHE_NAME = `16bit-shell-${CACHE_SCOPE_KEY}-v15`;
+const EJS_PREFIXES = [new URL('ejs-data/', BASE_URL).pathname, new URL('EJSData/', BASE_URL).pathname];
+const EJS_CDN = 'https://cdn.emulatorjs.org/4.2.3/data/';
 const APP_SHELL = ['', 'index.html', 'styles.css', 'app.js', 'manifest.webmanifest', 'icon.svg', 'icon-192.png', 'icon-512.png', 'ejs-data/loader.js', 'ejs-data/emulator.min.js', 'ejs-data/emulator.min.css']
   .map((path) => new URL(path, BASE_URL).href);
 
@@ -28,7 +28,9 @@ function withIsolationHeaders(response) {
 async function proxyEjsAsset(request, requestUrl) {
   let assetPath;
   try {
-    assetPath = decodeURIComponent(requestUrl.pathname.slice(EJS_PREFIX.length));
+    const prefix = EJS_PREFIXES.find((candidate) => requestUrl.pathname.startsWith(candidate));
+    if (!prefix) return new Response('Invalid EmulatorJS asset path', { status: 400 });
+    assetPath = decodeURIComponent(requestUrl.pathname.slice(prefix.length));
   } catch {
     return new Response('Invalid EJS asset path', { status: 400 });
   }
@@ -40,11 +42,19 @@ async function proxyEjsAsset(request, requestUrl) {
   const cached = await cache.match(request);
   if (cached) return cached;
 
-  const bundled = await fetch(new URL(`ejs-data/${assetPath}`, BASE_URL));
-  if (bundled.ok) {
-    const headers = new Headers(bundled.headers);
-    headers.set('Cross-Origin-Resource-Policy', 'same-origin');
-    return new Response(bundled.body, { status: bundled.status, statusText: bundled.statusText, headers });
+  try {
+    const localUrl = new URL(`ejs-data/${assetPath}`, BASE_URL);
+    const localRequest = new Request(localUrl, { headers: { 'X-16Bit-Asset-Direct': '1' } });
+    const bundled = await fetch(localRequest);
+    if (bundled.ok) {
+      const headers = new Headers(bundled.headers);
+      headers.set('Cross-Origin-Resource-Policy', 'same-origin');
+      const response = new Response(bundled.body, { status: bundled.status, statusText: bundled.statusText, headers });
+      cache.put(request, response.clone()).catch(() => {});
+      return response;
+    }
+  } catch {
+    // Continue with the pinned official CDN if a bundled file is missing or unreadable.
   }
 
   let upstream;
@@ -75,9 +85,9 @@ async function proxyEjsAsset(request, requestUrl) {
 
 self.addEventListener('fetch', (event) => {
   const requestUrl = new URL(event.request.url);
-  if (event.request.method !== 'GET' || requestUrl.origin !== self.location.origin) return;
+  if (event.request.method !== 'GET' || requestUrl.origin !== self.location.origin || event.request.headers.get('X-16Bit-Asset-Direct') === '1') return;
 
-  if (requestUrl.pathname.startsWith(EJS_PREFIX)) {
+  if (EJS_PREFIXES.some((prefix) => requestUrl.pathname.startsWith(prefix))) {
     event.respondWith(proxyEjsAsset(event.request, requestUrl));
     return;
   }

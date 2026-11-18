@@ -1,6 +1,6 @@
 # 16-Bit Arcade
 
-Emulador retrô para navegador, computador e Android. A versão 4.0.0 inclui o runtime e os núcleos EmulatorJS no app, controles virtuais configuráveis e suporte a mídias de CD com arquivos de faixa associados. ROMs, BIOS e firmware continuam sendo escolhidos pelo usuário e não vêm no app.
+Emulador retrô para navegador, computador e Android. A **Ultimate Update 5.0.0** aplica identidade visual por sistema, controles de toque configuráveis e carregamento local com recuperação de núcleo pelo service worker. O APK inclui runtime e dados dos núcleos EmulatorJS; ROMs, BIOS e firmware continuam sendo escolhidos pelo usuário.
 
 ## Publicar no GitHub Pages
 
@@ -26,6 +26,7 @@ O APK, `node_modules` e arquivos temporários de build ficam fora do repositóri
 - **2.2.2** — carrega o runtime incluído diretamente do app, sem depender do service worker para encontrar o arquivo inicial; adiciona suporte a publicação no GitHub Pages.
 - **3.0.0** — adiciona Atari 8-bit, ZX Spectrum, Amstrad CPC e Doom; inclui núcleos alternativos para NES, Nintendo DS, Nintendo 64, PlayStation e arcade; acrescenta teclado virtual para computadores retrô e fixa as versões dos pacotes dos núcleos.
 - **4.0.0** — integra Sega SG-1000, Sega Pico experimental, Neo Geo, SuperGrafx e PC Engine CD; inclui runtime EmulatorJS minificado local para reduzir falhas de download; redesenha controles virtuais por sistema com direcional digital ou analógico; importa e salva os arquivos associados a mídias CUE/GDI/M3U; separa os saves por jogo.
+- **5.0.0 — Ultimate Update** — cria temas e arte contextual para cada família de sistemas; adiciona ajuste de tamanho e transparência aos controles de toque; combina temas dos botões e esquemas de controle por console; permite tentar novamente a inicialização após uma falha; corrige a interceptação dos caminhos locais do EmulatorJS e adiciona recuperação de arquivos pelo CDN oficial fixado na mesma versão.
 
 ## Sistemas integrados
 
@@ -37,7 +38,7 @@ O APK, `node_modules` e arquivos temporários de build ficam fora do repositóri
 - **Computadores adicionais:** Sinclair ZX Spectrum e Amstrad CPC. **PC MS-DOS** usa DOSBox Pure e abre pacotes de jogos `.zip` ou `.7z`.
 - **Arcade e Doom:** FBNeo e MAME 2003/2003 Plus; PrBoom para arquivos de jogo Doom `.wad`. Use versões de ROM compatíveis com o núcleo selecionado.
 
-O catálogo usa sistemas e núcleos do [EmulatorJS](https://emulatorjs.org/docs4devs/cores/) e alguns sistemas adicionais reconhecidos pelos mesmos núcleos. Runtime minificado, dados dos núcleos e relatórios usados pelo app são incluídos em `ejs-data/`; o service worker mantém fallback para o CDN oficial se um recurso não estiver empacotado. As versões e hashes dos novos pacotes estão em `ejs-data/cores/core-packages-lock.json`. Durante uma partida, o menu do EmulatorJS permite selecionar núcleos alternativos quando o sistema oferece essa opção.
+O catálogo usa sistemas e núcleos do [EmulatorJS](https://emulatorjs.org/docs4devs/cores/) e alguns sistemas adicionais reconhecidos pelos mesmos núcleos. Runtime minificado, dados dos núcleos e relatórios usados pelo app são incluídos em `ejs-data/`; o service worker prioriza esses arquivos locais, armazena os recursos acessados e usa o CDN oficial fixado na versão 4.2.3 como recuperação se um arquivo não estiver disponível. As versões e hashes dos novos pacotes estão em `ejs-data/cores/core-packages-lock.json`. Durante uma partida, o menu do EmulatorJS permite selecionar núcleos alternativos quando o sistema oferece essa opção.
 
 ### Formatos e BIOS
 
@@ -51,7 +52,7 @@ Arcade, DOSBox, 3DO, Saturn, N64, PSP e Dreamcast podem exigir bastante desempen
 
 - Biblioteca local com busca, favoritos, histórico e ordenação.
 - Exportação da ROM; discos com faixas associadas saem em um ZIP completo.
-- Controles por toque adaptados ao sistema, cruz digital ou analógico, teclado virtual e controles Bluetooth com remapeamento no menu do EmulatorJS.
+- Controles por toque adaptados ao sistema, cruz digital ou analógico, layout compacto ou expandido, tamanho e transparência ajustáveis, teclado virtual e controles Bluetooth com remapeamento no menu do EmulatorJS.
 - Tela cheia imersiva, efeitos CRT, ajuste de tela, volume, vibração e tela sempre ligada.
 - Runtime e núcleos locais no APK, sem download na primeira execução; cache local no navegador para os arquivos usados.
 - BIOS armazenadas localmente no aparelho.

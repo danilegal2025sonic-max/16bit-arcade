@@ -77,7 +77,7 @@ const SYSTEMS = {
   amstradcpc: { name: 'Amstrad CPC', core: 'cap32', keyboard: true, extensions: ['dsk','sna','cdt','cpr','voc','zip','7z'] },
   doom: { name: 'Doom (PrBoom)', core: 'prboom', keyboard: true, extensions: ['wad','zip','7z'] },
 };
-const CURRENT_VERSION = '4.0.0';
+const CURRENT_VERSION = '5.0.0';
 const SYSTEM_KEY = 'sixteenbit-system-v1';
 
 const DB_NAME = 'sixbit-local-library';
@@ -94,6 +94,8 @@ const DEFAULT_SETTINGS = {
   touchControls: true,
   layout: 'three',
   padStyle: 'dpad',
+  padOpacity: 78,
+  padScale: 100,
   volume: 80,
   haptics: true,
   keepAwake: true,
@@ -118,6 +120,24 @@ const SYSTEM_GROUPS = {
   Arcade: ['arcade','mame2003'],
   'PC clássico': ['doom'],
   Outros: ['3do','coleco','pce','supergrafx','pcenginecd','ngp','ws','pcfx','neogeo'],
+};
+const SYSTEM_FAMILIES = Object.fromEntries(Object.entries(SYSTEM_GROUPS).flatMap(([family, ids]) => ids.map((id) => [id, family])));
+const FAMILY_SKINS = {
+  Sega: { accent: '#78c8ff', rgb: '120,200,255', deep: '#153754' },
+  Nintendo: { accent: '#ff6879', rgb: '255,104,121', deep: '#4b202c' },
+  PlayStation: { accent: '#82aaff', rgb: '130,170,255', deep: '#222f58' },
+  Atari: { accent: '#ffb45c', rgb: '255,180,92', deep: '#49321b' },
+  Computadores: { accent: '#79dec5', rgb: '121,222,197', deep: '#1d433c' },
+  Arcade: { accent: '#ef7cdb', rgb: '239,124,219', deep: '#462342' },
+  'PC clássico': { accent: '#ff706a', rgb: '255,112,106', deep: '#4b2523' },
+  Outros: { accent: '#c39aff', rgb: '195,154,255', deep: '#37234e' },
+};
+const SYSTEM_MARKS = {
+  megadrive: 'GENESIS', segacd: 'MEGA-CD', '32x': '32X', saturn: 'SATURN', mastersystem: 'MASTER SYSTEM', gamegear: 'GAME GEAR',
+  dreamcast: 'DREAMCAST', sg1000: 'SG-1000', segapico: 'PICO', nes: 'FAMICOM', snes: 'SUPER FAMICOM', gb: 'GAME BOY', gbc: 'GAME BOY COLOR',
+  gba: 'GAME BOY ADVANCE', nds: 'NINTENDO DS', n64: 'NINTENDO 64', ps1: 'PLAYSTATION', psp: 'PSP', atari2600: 'ATARI 2600',
+  atari5200: 'ATARI 5200', atari7800: 'ATARI 7800', jaguar: 'JAGUAR', lynx: 'LYNX', vb: 'VIRTUAL BOY', arcade: 'ARCADE',
+  mame2003: 'MAME 2003', c64: 'COMMODORE 64', amiga: 'AMIGA', dos: 'MS-DOS', doom: 'DOOM', pce: 'PC ENGINE',
 };
 const SYSTEM_SUMMARIES = {
   c64:'Computador doméstico · VICE', c128:'Computador doméstico · VICE', pet:'Computador clássico · VICE',
@@ -195,6 +215,7 @@ let dbPromise;
 let currentObjectUrl = null;
 let currentRecordId = null;
 let currentLaunch = 0;
+let lastLaunchRequest = null;
 let toastTimer = null;
 let wakeLock = null;
 let nativeImmersive = false;
@@ -710,6 +731,10 @@ function populateSettingsForm() {
   document.querySelector('#setting-controls').checked = settings.touchControls;
   document.querySelector('#setting-layout').value = settings.layout;
   document.querySelector('#setting-pad-style').value = settings.padStyle;
+  document.querySelector('#setting-pad-opacity').value = settings.padOpacity;
+  document.querySelector('#setting-pad-scale').value = settings.padScale;
+  document.querySelector('#pad-opacity-value').textContent = `${settings.padOpacity}%`;
+  document.querySelector('#pad-scale-value').textContent = `${settings.padScale}%`;
   document.querySelector('#setting-haptics').checked = settings.haptics;
   document.querySelector('#setting-wake').checked = settings.keepAwake;
   document.querySelector('#setting-startup-sound').checked = settings.startupSound;
@@ -726,6 +751,8 @@ function getSettingsFromForm() {
     touchControls: document.querySelector('#setting-controls').checked,
     layout: document.querySelector('#setting-layout').value,
     padStyle: document.querySelector('#setting-pad-style').value,
+    padOpacity: Math.min(100, Math.max(35, Number(document.querySelector('#setting-pad-opacity').value))),
+    padScale: Math.min(130, Math.max(75, Number(document.querySelector('#setting-pad-scale').value))),
     volume: Number(volumeInput.value),
     haptics: document.querySelector('#setting-haptics').checked,
     keepAwake: document.querySelector('#setting-wake').checked,
@@ -792,6 +819,24 @@ function virtualGamepadSettings(systemId = selectedSystem) {
     { type: 'button', text: 'START', id: 'sixbit-start', location: 'center', left: 32, fontSize: 10, block: true, input_value: 3 },
   );
   return controls;
+}
+
+function applySystemSkin() {
+  const system = SYSTEMS[selectedSystem] || SYSTEMS.megadrive;
+  const family = SYSTEM_FAMILIES[selectedSystem] || 'Outros';
+  const skin = FAMILY_SKINS[family] || FAMILY_SKINS.Outros;
+  const heroArt = document.querySelector('#hero-art');
+  document.body.dataset.system = selectedSystem;
+  document.body.dataset.systemFamily = family.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+  heroArt.style.setProperty('--console-accent', skin.accent);
+  heroArt.style.setProperty('--console-accent-rgb', skin.rgb);
+  heroArt.style.setProperty('--console-deep', skin.deep);
+  playerView.style.setProperty('--console-accent', skin.accent);
+  playerView.style.setProperty('--console-accent-rgb', skin.rgb);
+  document.querySelector('#hero-art-family').textContent = family.toUpperCase();
+  document.querySelector('#hero-art-system').textContent = SYSTEM_MARKS[selectedSystem] || system.name.toUpperCase();
+  document.querySelector('#hero-art-core').textContent = system.kind === 'external' ? 'PLAYER EXTERNO' : `NÚCLEO ${system.core.toUpperCase()}`;
+  document.querySelector('#hero-art-caption').textContent = SYSTEM_SUMMARIES[selectedSystem] || (system.keyboard ? 'TECLADO VIRTUAL DISPONÍVEL' : 'CONTROLES ADAPTADOS');
 }
 
 const VIRTUAL_KEY_ROWS = [
@@ -926,6 +971,8 @@ async function launchGame(file, record = null, soundAlreadyPlayed = false, selec
     showToast(`${system.name} precisa de isolamento entre origens. Atualize a página depois que o app terminar de configurar o núcleo.`);
     return;
   }
+  lastLaunchRequest = { file, record, selectedSidecars };
+  document.querySelector('#player-retry').hidden = true;
   selectSystem(systemId);
   setVirtualKeyboardOpen(false);
   if (!soundAlreadyPlayed) playStartupSound();
@@ -997,6 +1044,10 @@ async function launchGame(file, record = null, soundAlreadyPlayed = false, selec
   const safeLoaderUrl = JSON.stringify(new URL('ejs-data/loader.js', APP_BASE_URL).href);
   const virtualPad = JSON.stringify(virtualGamepadSettings(systemId));
   const volume = Math.min(100, Math.max(0, settings.volume)) / 100;
+  const skin = FAMILY_SKINS[SYSTEM_FAMILIES[systemId] || 'Outros'] || FAMILY_SKINS.Outros;
+  const padOpacity = Math.min(100, Math.max(35, Number(settings.padOpacity) || 78)) / 100;
+  const padScale = Math.min(130, Math.max(75, Number(settings.padScale) || 100)) / 100;
+  const touchControlsCss = settings.touchControls ? '' : '.ejs_virtualGamepad_parent,.ejs_virtualGamepad_open{display:none!important}';
 
   playerView.hidden = false;
   document.body.classList.add('is-playing');
@@ -1021,8 +1072,12 @@ async function launchGame(file, record = null, soundAlreadyPlayed = false, selec
     <style>
       html,body,#game{width:100%;height:100%;margin:0;background:#000;overflow:hidden}
       body{touch-action:none}
-      [id^="sixbit-face-"]{background:radial-gradient(circle at 35% 25%,#f17858,#a92820)!important;border:2px solid #701b16!important;border-radius:50%!important;color:#fff!important;box-shadow:inset 0 1px 2px #ffb09a,0 2px 5px #0009!important}
-      [id^="sixbit-select"],[id^="sixbit-start"]{background:linear-gradient(#a7a99c,#55584d)!important;border:1px solid #33352d!important;border-radius:8px!important;color:#171811!important}
+      .ejs_virtualGamepad_button{opacity:${padOpacity}!important;transform:scale(${padScale})!important;transform-origin:center!important;background:radial-gradient(circle at 35% 25%,${skin.accent},${skin.deep})!important;border:2px solid ${skin.deep}!important;color:#fff!important;box-shadow:inset 0 1px 2px #fff7,0 2px 5px #0009!important}
+      .ejs_virtualGamepad_left,.ejs_virtualGamepad_top{opacity:${padOpacity}!important;zoom:${padScale}!important}
+      .ejs_virtualGamepad_right{opacity:${padOpacity}!important}
+      .ejs_dpad_main{opacity:1!important}
+      [id^="sixbit-select"],[id^="sixbit-start"]{background:linear-gradient(#e7e9ef,#777b88)!important;border:1px solid #2a2c35!important;border-radius:8px!important;color:#171811!important}
+      ${touchControlsCss}
     </style></head>
     <body><div id="game"></div><script>
       window.EJS_player = '#game';
@@ -1031,7 +1086,7 @@ async function launchGame(file, record = null, soundAlreadyPlayed = false, selec
       window.EJS_gameUrl = ${safeRomUrl};
       window.EJS_gameName = ${safeGameName};
       window.EJS_pathtodata = ${safeDataPath};
-      window.EJS_color = '${settings.theme === 'violet' ? '#d19aff' : settings.theme === 'blue' ? '#61dafa' : '#c8f45a'}';
+      window.EJS_color = '${skin.accent}';
       window.EJS_backgroundColor = '#000000';
       if (${safeControl}) window.EJS_controlScheme = ${safeControl};
       if (${safeBiosUrl}) window.EJS_biosUrl = ${safeBiosUrl};
@@ -1066,6 +1121,7 @@ function showPlayerError(message) {
   playerLoader.querySelector('.loader-ring').hidden = true;
   playerLoader.querySelector('strong').textContent = 'Não foi possível iniciar';
   playerLoader.querySelector('span').textContent = message;
+  document.querySelector('#player-retry').hidden = !lastLaunchRequest;
   controlHint.textContent = 'FALHA AO INICIAR';
   showToast(message);
 }
@@ -1393,6 +1449,8 @@ settingsForm.addEventListener('submit', (event) => {
   const restartNeeded = settings.touchControls !== previous.touchControls
     || settings.layout !== previous.layout
     || settings.padStyle !== previous.padStyle
+    || settings.padOpacity !== previous.padOpacity
+    || settings.padScale !== previous.padScale
     || settings.volume !== previous.volume
     || settings.devMode !== previous.devMode;
   showToast(restartNeeded
@@ -1407,6 +1465,17 @@ settingsDialog.addEventListener('close', () => showPlayerChrome(true));
 volumeInput.addEventListener('input', () => {
   volumeValue.value = `${volumeInput.value}%`;
   volumeValue.textContent = `${volumeInput.value}%`;
+});
+document.querySelector('#setting-pad-opacity').addEventListener('input', (event) => {
+  document.querySelector('#pad-opacity-value').textContent = `${event.target.value}%`;
+});
+document.querySelector('#setting-pad-scale').addEventListener('input', (event) => {
+  document.querySelector('#pad-scale-value').textContent = `${event.target.value}%`;
+});
+document.querySelector('#player-retry').addEventListener('click', () => {
+  if (!lastLaunchRequest) return;
+  const { file, record, selectedSidecars } = lastLaunchRequest;
+  launchGame(file, record, true, selectedSidecars).catch((error) => showPlayerError(`Falha ao tentar novamente: ${error.message}`));
 });
 
 document.addEventListener('fullscreenchange', () => {
@@ -1554,6 +1623,7 @@ function updateSystemActions() {
   libraryImportButton.disabled = externalSystem;
   libraryImportButton.title = externalSystem ? 'Este sistema abre em outro app ou página' : '';
   document.querySelector('#system-picker-current').textContent = SYSTEMS[selectedSystem]?.name || 'Escolher sistema';
+  applySystemSkin();
 }
 updateSystemActions();
 systemSelect.addEventListener('change', () => {
