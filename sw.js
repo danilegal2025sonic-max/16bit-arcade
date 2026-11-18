@@ -1,6 +1,6 @@
 const BASE_URL = new URL(self.registration.scope);
 const CACHE_SCOPE_KEY = BASE_URL.pathname.replace(/[^a-z0-9]+/gi, '-').replace(/^-|-$/g, '') || 'root';
-const CACHE_NAME = `16bit-shell-${CACHE_SCOPE_KEY}-v16`;
+const CACHE_NAME = `16bit-shell-${CACHE_SCOPE_KEY}-v17`;
 const EJS_PREFIXES = [new URL('ejs-data/', BASE_URL).pathname, new URL('EJSData/', BASE_URL).pathname];
 const EJS_CDN = 'https://cdn.emulatorjs.org/4.2.3/data/';
 const APP_SHELL = ['', 'index.html', 'styles.css', 'app.js', 'manifest.webmanifest', 'icon.svg', 'icon-192.png', 'icon-512.png', 'ejs-data/loader.js', 'ejs-data/emulator.min.js', 'ejs-data/emulator.min.css', 'v86/build/libv86.mjs', 'v86/build/v86.wasm', 'v86/build/v86-fallback.wasm', 'v86/bios/seabios.bin', 'v86/bios/vgabios.bin']

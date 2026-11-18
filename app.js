@@ -77,7 +77,7 @@ const SYSTEMS = {
   amstradcpc: { name: 'Amstrad CPC', core: 'cap32', keyboard: true, extensions: ['dsk','sna','cdt','cpr','voc','zip','7z'] },
   doom: { name: 'Doom (PrBoom)', core: 'prboom', keyboard: true, extensions: ['wad','zip','7z'] },
 };
-const CURRENT_VERSION = '5.1.0';
+const CURRENT_VERSION = '5.1.1';
 const SYSTEM_KEY = 'sixteenbit-system-v1';
 
 const DB_NAME = 'sixbit-local-library';
@@ -1372,6 +1372,14 @@ async function refreshDeveloperPanel() {
 let windowsVm = null;
 let windowsVmDiskUrl = '';
 let windowsVmCdUrl = '';
+let windowsVmReady = false;
+let windowsVmSessionKey = '';
+let windowsVmSessionMeta = null;
+let windowsVmStopPromise = null;
+const WINDOWS_VM_DISK_SIZE = 2 * 1024 * 1024 * 1024;
+const WINDOWS_VM_DB_NAME = '16bit-arcade-windows-xp';
+const WINDOWS_VM_DB_STORE = 'sessions';
+const WINDOWS_VM_SESSION_PREFIX = 'xp-v1:';
 const windowsVmDialog = document.querySelector('#developer-vm-dialog');
 const windowsVmScreen = document.querySelector('#windows-vm-screen');
 const windowsVmStatus = document.querySelector('#windows-vm-status');
@@ -1391,18 +1399,138 @@ function updateWindowsVmButtons(state) {
   windowsVmFullscreenButton.disabled = state !== 'running';
 }
 
+function openWindowsVmDatabase() {
+  return new Promise((resolve, reject) => {
+    const request = indexedDB.open(WINDOWS_VM_DB_NAME, 1);
+    request.onupgradeneeded = () => {
+      if (!request.result.objectStoreNames.contains(WINDOWS_VM_DB_STORE)) request.result.createObjectStore(WINDOWS_VM_DB_STORE);
+    };
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error || new Error('Não foi possível abrir o armazenamento da sessão.'));
+  });
+}
+
+async function loadWindowsVmSession(key) {
+  const database = await openWindowsVmDatabase();
+  try {
+    return await new Promise((resolve, reject) => {
+      const transaction = database.transaction(WINDOWS_VM_DB_STORE, 'readonly');
+      const request = transaction.objectStore(WINDOWS_VM_DB_STORE).get(key);
+      request.onsuccess = () => resolve(request.result || null);
+      request.onerror = () => reject(request.error || new Error('Não foi possível ler a sessão salva.'));
+    });
+  } finally {
+    database.close();
+  }
+}
+
+async function saveWindowsVmSession(key, record) {
+  const database = await openWindowsVmDatabase();
+  try {
+    await new Promise((resolve, reject) => {
+      const transaction = database.transaction(WINDOWS_VM_DB_STORE, 'readwrite');
+      transaction.objectStore(WINDOWS_VM_DB_STORE).put(record, key);
+      transaction.oncomplete = () => resolve();
+      transaction.onerror = () => reject(transaction.error || new Error('Não foi possível gravar a sessão.'));
+      transaction.onabort = () => reject(transaction.error || new Error('O armazenamento recusou a sessão.'));
+    });
+  } finally {
+    database.close();
+  }
+}
+
+async function deleteWindowsVmSession(key) {
+  const database = await openWindowsVmDatabase();
+  try {
+    await new Promise((resolve, reject) => {
+      const transaction = database.transaction(WINDOWS_VM_DB_STORE, 'readwrite');
+      transaction.objectStore(WINDOWS_VM_DB_STORE).delete(key);
+      transaction.oncomplete = () => resolve();
+      transaction.onerror = () => reject(transaction.error || new Error('Não foi possível remover a sessão incompatível.'));
+      transaction.onabort = () => reject(transaction.error || new Error('Não foi possível remover a sessão incompatível.'));
+    });
+  } finally {
+    database.close();
+  }
+}
+
+async function getWindowsVmVirtualDisk() {
+  if (!navigator.storage?.getDirectory) throw new Error('Este navegador não oferece armazenamento local para criar o disco virtual. Atualize o Android System WebView e tente novamente.');
+  const root = await navigator.storage.getDirectory();
+  const directory = await root.getDirectoryHandle('16bit-arcade-vm', { create: true });
+  const handle = await directory.getFileHandle('windows-xp-2gb.raw', { create: true });
+  let file = await handle.getFile();
+  if (file.size !== WINDOWS_VM_DISK_SIZE) {
+    const writable = await handle.createWritable({ keepExistingData: false });
+    await writable.truncate(WINDOWS_VM_DISK_SIZE);
+    await writable.close();
+    file = await handle.getFile();
+  }
+  return file;
+}
+
+function windowsVmIsoSessionKey(iso) {
+  return `${WINDOWS_VM_SESSION_PREFIX}${encodeURIComponent(iso.name)}:${iso.size}:${iso.lastModified}`;
+}
+
+function windowsVmSessionUsesIso(record, iso) {
+  return record?.meta?.isoName === iso.name
+    && record.meta.isoSize === iso.size
+    && record.meta.isoLastModified === iso.lastModified
+    && record.state instanceof ArrayBuffer;
+}
+
+function windowsVmSessionMatches(record, iso, memorySize) {
+  return windowsVmSessionUsesIso(record, iso)
+    && record.meta.memorySize === memorySize
+    && record.meta.diskSize === WINDOWS_VM_DISK_SIZE
+}
+
+function explainWindowsVmError(error, saving = false) {
+  if (error?.name === 'QuotaExceededError' || /quota|storage|space|espaço/i.test(error?.message || '')) {
+    return saving
+      ? 'Sem espaço livre suficiente para salvar a sessão. Libere armazenamento e pare a máquina novamente.'
+      : 'Sem espaço livre suficiente no armazenamento do app para criar o disco virtual.';
+  }
+  return error?.message || 'Erro desconhecido.';
+}
+
 async function stopWindowsVm() {
+  if (windowsVmStopPromise) return windowsVmStopPromise;
+  windowsVmStopPromise = (async () => {
   const vm = windowsVm;
+  const wasReady = windowsVmReady;
   windowsVm = null;
+  windowsVmReady = false;
+  let saved = false;
+  let saveError = null;
+  const autoSession = Boolean(windowsVmSessionKey && windowsVmSessionMeta);
   if (vm) {
     try { await vm.stop(); } catch { /* A VM may stop itself after a guest shutdown. */ }
+    if (wasReady && windowsVmSessionKey && windowsVmSessionMeta) {
+      try {
+        setWindowsVmStatus('Salvando a sessão local…');
+        const state = await vm.save_state();
+        await saveWindowsVmSession(windowsVmSessionKey, { meta: windowsVmSessionMeta, state });
+        saved = true;
+      } catch (error) {
+        saveError = error;
+        recentAppErrors.push(`Windows XP save: ${error?.message || error}`);
+      }
+    }
     try { await vm.destroy(); } catch { /* Cleanup continues for the selected file handles. */ }
   }
   if (windowsVmDiskUrl) URL.revokeObjectURL(windowsVmDiskUrl);
   if (windowsVmCdUrl) URL.revokeObjectURL(windowsVmCdUrl);
   windowsVmDiskUrl = '';
   windowsVmCdUrl = '';
+  windowsVmSessionKey = '';
+  windowsVmSessionMeta = null;
   updateWindowsVmButtons('stopped');
+  return { hadVm: Boolean(vm), autoSession, saved, saveError };
+  })();
+  try { return await windowsVmStopPromise; }
+  finally { windowsVmStopPromise = null; }
 }
 
 async function startWindowsVm() {
@@ -1410,19 +1538,52 @@ async function startWindowsVm() {
     showToast('Ative o modo de desenvolvedor para abrir o PC virtual.');
     return;
   }
-  const disk = document.querySelector('#windows-vm-disk').files?.[0];
+  const selectedDisk = document.querySelector('#windows-vm-disk').files?.[0];
   const cd = document.querySelector('#windows-vm-cd').files?.[0];
-  if (!disk) {
-    setWindowsVmStatus('Selecione primeiro uma imagem RAW inicializável com Windows XP.');
+  if (!selectedDisk && !cd) {
+    setWindowsVmStatus('Escolha uma ISO de instalação do XP ou um disco RAW com XP instalado.');
     return;
   }
   const maxImageSize = 3 * 1024 * 1024 * 1024;
-  if (disk.size < 512 * 1024 || disk.size > maxImageSize || (cd && cd.size > maxImageSize)) {
+  if ((selectedDisk && (selectedDisk.size < 512 * 1024 || selectedDisk.size > maxImageSize)) || (cd && cd.size > maxImageSize)) {
     setWindowsVmStatus('Imagem inválida ou maior que o limite experimental de 3 GB por arquivo.');
     return;
   }
 
   await stopWindowsVm();
+  if (!windowsVmDialog.open) return;
+  const memorySize = Number(document.querySelector('#windows-vm-memory').value) * 1024 * 1024;
+  let disk = selectedDisk;
+  let sessionRecord = null;
+  windowsVmSessionKey = '';
+  windowsVmSessionMeta = null;
+  if (!disk && cd) {
+    setWindowsVmStatus('Criando disco virtual local de 2 GB…');
+    try {
+      disk = await getWindowsVmVirtualDisk();
+    } catch (error) {
+      setWindowsVmStatus(explainWindowsVmError(error));
+      return;
+    }
+    if (!windowsVmDialog.open) return;
+    windowsVmSessionKey = windowsVmIsoSessionKey(cd);
+    windowsVmSessionMeta = {
+      memorySize,
+      diskSize: WINDOWS_VM_DISK_SIZE,
+      isoName: cd.name,
+      isoSize: cd.size,
+      isoLastModified: cd.lastModified,
+    };
+    try { sessionRecord = await loadWindowsVmSession(windowsVmSessionKey); }
+    catch (error) { recentAppErrors.push(`Windows XP storage: ${error?.message || error}`); }
+    if (windowsVmSessionUsesIso(sessionRecord, cd) && sessionRecord.meta.memorySize !== memorySize) {
+      const savedMemoryMb = Math.round(sessionRecord.meta.memorySize / (1024 * 1024));
+      setWindowsVmStatus(`Esta ISO tem uma sessão salva com ${savedMemoryMb} MB. Selecione essa memória para retomá-la.`);
+      windowsVmSessionKey = '';
+      windowsVmSessionMeta = null;
+      return;
+    }
+  }
   const screenText = windowsVmScreen.querySelector('.vm-screen-text');
   const screenCanvas = windowsVmScreen.querySelector('.vm-screen-canvas');
   screenText.textContent = '';
@@ -1432,55 +1593,85 @@ async function startWindowsVm() {
   windowsVmDiskUrl = URL.createObjectURL(disk);
   if (cd) windowsVmCdUrl = URL.createObjectURL(cd);
   updateWindowsVmButtons('loading');
-  setWindowsVmStatus('Carregando runtime local e imagem de disco…');
+  const canResumeSession = !selectedDisk && cd && windowsVmSessionMatches(sessionRecord, cd, memorySize);
+  setWindowsVmStatus(canResumeSession ? 'Carregando a sessão salva do XP…' : 'Carregando runtime local e arquivos selecionados…');
 
   try {
     const { V86 } = await import(new URL('v86/build/libv86.mjs', APP_BASE_URL).href);
+    if (!windowsVmDialog.open) {
+      if (windowsVmDiskUrl) URL.revokeObjectURL(windowsVmDiskUrl);
+      if (windowsVmCdUrl) URL.revokeObjectURL(windowsVmCdUrl);
+      windowsVmDiskUrl = '';
+      windowsVmCdUrl = '';
+      windowsVmSessionKey = '';
+      windowsVmSessionMeta = null;
+      updateWindowsVmButtons('stopped');
+      return;
+    }
     const options = {
       wasm_path: new URL('v86/build/v86.wasm', APP_BASE_URL).href,
-      memory_size: Number(document.querySelector('#windows-vm-memory').value) * 1024 * 1024,
+      memory_size: memorySize,
       vga_memory_size: 8 * 1024 * 1024,
       screen_container: windowsVmScreen,
       bios: { url: new URL('v86/bios/seabios.bin', APP_BASE_URL).href },
       vga_bios: { url: new URL('v86/bios/vgabios.bin', APP_BASE_URL).href },
       hda: { url: windowsVmDiskUrl, async: true, size: disk.size },
+      boot_order: 0x213,
       acpi: false,
       cpuid_level: 2,
       autostart: false,
     };
     if (cd && windowsVmCdUrl) options.cdrom = { url: windowsVmCdUrl, async: true, size: cd.size };
-    windowsVm = new V86(options);
-    windowsVm.add_listener('download-progress', (event) => {
+    const vm = new V86(options);
+    windowsVm = vm;
+    vm.add_listener('download-progress', (event) => {
       if (event.lengthComputable && event.total > 0) {
         const percent = Math.min(100, Math.round(event.loaded / event.total * 100));
         setWindowsVmStatus(`Carregando ${event.file_name || 'imagem'} · ${percent}%`);
       }
     });
-    windowsVm.add_listener('download-error', (event) => {
+    vm.add_listener('download-error', (event) => {
       setWindowsVmStatus(`Falha ao ler ${event.file_name || 'a imagem de disco'}. Tente uma imagem RAW local.`);
     });
-    windowsVm.add_listener('emulator-ready', async () => {
+    vm.add_listener('emulator-ready', async () => {
       try {
-        await windowsVm?.run();
+        if (windowsVm !== vm) return;
+        let sessionRestored = false;
+        if (canResumeSession && windowsVmSessionKey) {
+          try {
+            await vm.restore_state(sessionRecord.state);
+            sessionRestored = true;
+          } catch (error) {
+            recentAppErrors.push(`Windows XP restore: ${error?.message || error}`);
+            try { await deleteWindowsVmSession(windowsVmSessionKey); }
+            catch (deleteError) { recentAppErrors.push(`Windows XP session cleanup: ${deleteError?.message || deleteError}`); }
+            setWindowsVmStatus('A sessão salva era incompatível e foi descartada. Iniciando a instalação do zero…');
+          }
+        }
+        if (windowsVm !== vm) return;
+        windowsVmReady = true;
+        await vm.run();
         updateWindowsVmButtons('running');
-        setWindowsVmStatus('PC virtual ligado. Toque na tela ou use as teclas rápidas abaixo.');
+        if (sessionRestored) setWindowsVmStatus('Sessão do XP retomada. Use Parar para salvar antes de sair.');
+        else if (!selectedDisk && cd) setWindowsVmStatus('PC ligado pela ISO. Instale o XP no disco C:; use Parar para salvar e continuar depois.');
+        else setWindowsVmStatus('PC virtual ligado. Toque na tela ou use as teclas rápidas abaixo.');
       } catch (error) {
         recentAppErrors.push(`Windows XP VM: ${error?.message || error}`);
-        setWindowsVmStatus('Não foi possível iniciar a máquina virtual neste aparelho.');
         await stopWindowsVm();
+        setWindowsVmStatus('Não foi possível iniciar a máquina virtual neste aparelho.');
       }
     });
-    windowsVm.add_listener('emulator-started', () => {
+    vm.add_listener('emulator-started', () => {
       updateWindowsVmButtons('running');
       setWindowsVmStatus('PC virtual em execução.');
     });
-    windowsVm.add_listener('emulator-stopped', () => {
+    vm.add_listener('emulator-stopped', () => {
       if (windowsVm) setWindowsVmStatus('Máquina pausada. Use Reiniciar para voltar ao boot.');
     });
   } catch (error) {
     recentAppErrors.push(`Windows XP VM: ${error?.message || error}`);
     await stopWindowsVm();
-    setWindowsVmStatus('Falha ao carregar o runtime x86. Confira o armazenamento livre do app.');
+    setWindowsVmStatus(`Falha ao carregar o runtime x86: ${explainWindowsVmError(error)}`);
   }
 }
 
@@ -1538,8 +1729,11 @@ windowsVmRestartButton.addEventListener('click', () => {
   setWindowsVmStatus('Reiniciando o PC virtual…');
 });
 windowsVmStopButton.addEventListener('click', async () => {
-  await stopWindowsVm();
-  setWindowsVmStatus('Máquina parada. O disco original não foi alterado no aparelho.');
+  const result = await stopWindowsVm();
+  if (result.saved) setWindowsVmStatus('Sessão salva neste aparelho. Para continuar, escolha a mesma ISO e memória.');
+  else if (result.saveError) setWindowsVmStatus(`Máquina parada; não foi possível salvar: ${explainWindowsVmError(result.saveError, true)}`);
+  else if (result.autoSession) setWindowsVmStatus('Máquina parada. A sessão não foi salva; se estava carregando, tente novamente.');
+  else setWindowsVmStatus('Máquina parada. A imagem RAW original não foi alterada; as alterações desta sessão não foram gravadas.');
 });
 windowsVmFullscreenButton.addEventListener('click', async () => {
   try { await windowsVmScreen.requestFullscreen(); }
@@ -1576,8 +1770,12 @@ for (const dialog of [systemDescriptionsDialog, developerDialog, windowsVmDialog
   dialog.addEventListener('close', () => showPlayerChrome(true));
 }
 windowsVmDialog.addEventListener('close', () => {
-  void stopWindowsVm();
-  setWindowsVmStatus('Aguardando uma imagem de disco.');
+  void (async () => {
+    const result = await stopWindowsVm();
+    if (result.saved) setWindowsVmStatus('Sessão salva neste aparelho. Para continuar, escolha a mesma ISO e memória.');
+    else if (result.saveError) setWindowsVmStatus(`Não foi possível salvar a sessão: ${explainWindowsVmError(result.saveError, true)}`);
+    else setWindowsVmStatus('Aguardando uma ISO de instalação do XP ou um disco RAW instalado.');
+  })();
 });
 window.addEventListener('pagehide', () => { void stopWindowsVm(); });
 document.querySelector('#bios-only-help').addEventListener('click', showBiosOnlyExplanation);
