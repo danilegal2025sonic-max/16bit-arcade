@@ -1,6 +1,6 @@
 # 16-Bit Arcade
 
-Emulador retrô para navegador, computador e Android. A **Ultimate Update 5.1.1** corrige a instalação do Windows XP no PC virtual: agora aceita uma ISO do usuário e cria o disco virtual local automaticamente. Também aplica identidade visual por sistema, controles de toque configuráveis e carregamento local com recuperação de núcleo pelo service worker. ROMs, BIOS, firmware e imagens do Windows continuam sendo escolhidos pelo usuário.
+Emulador retrô para navegador, computador e Android. A **Ultimate Update 5.1.2** corrige a leitura de ISOs no PC virtual e adiciona a tecla F5 para escolher o perfil Standard PC do Windows XP durante o Setup. Também aplica identidade visual por sistema, controles de toque configuráveis e carregamento local com recuperação de núcleo pelo service worker. ROMs, BIOS, firmware e imagens do Windows continuam sendo escolhidos pelo usuário.
 
 ## Publicar no GitHub Pages
 
@@ -29,6 +29,7 @@ O APK, `node_modules` e arquivos temporários de build ficam fora do repositóri
 - **5.0.0 — Ultimate Update** — cria temas e arte contextual para cada família de sistemas; adiciona ajuste de tamanho e transparência aos controles de toque; combina temas dos botões e esquemas de controle por console; permite tentar novamente a inicialização após uma falha; corrige a interceptação dos caminhos locais do EmulatorJS e adiciona recuperação de arquivos pelo CDN oficial fixado na mesma versão.
 - **5.1.0 — Developer PC** — integra o runtime v86 ao APK e ao PWA; adiciona um PC virtual x86 experimental acessível pelo modo de desenvolvedor, compatibilidade com disco RAW e CD opcional, memória configurável, teclas de toque e tela cheia; inclui os arquivos de runtime necessários para uso offline, mas não inclui Windows XP nem imagens de disco.
 - **5.1.1 — Instalação de XP** — aceita uma ISO inicializável do usuário sem exigir arquivo `.img`; cria um disco virtual local de 2 GB e salva a sessão no aparelho ao parar, permitindo retomá-la com a mesma ISO e memória.
+- **5.1.2 — Compatibilidade do Setup** — lê os arquivos de disco direto do objeto local, evitando a rota de URL temporária; adiciona a tecla F5 e a instrução para selecionar **Standard PC** durante a instalação do XP.
 
 ## Sistemas integrados
 
@@ -50,7 +51,7 @@ PS1, Sega CD e Saturn podem exigir BIOS. Nintendo DS com melonDS exige `bios7.bi
 
 ### PC virtual Windows XP experimental
 
-Ative **Configurações → Menu de desenvolvedor → Modo de desenvolvedor → Abrir PC virtual**. Escolha uma ISO inicializável sua do Windows XP para instalar sem precisar procurar um `.img`; o app cria um disco virtual local de 2 GB. Também é possível escolher um disco RAW já instalado (`.img`, `.hdd` ou `.bin`). Toque em **Parar e salvar** para guardar a sessão neste aparelho; para retomá-la, selecione a mesma ISO e a mesma memória. É necessário espaço local para o disco virtual e para o estado salvo (que inclui memória e alterações do disco). O app não fornece Windows nem licença. A instalação precisa usar o perfil **Standard PC** descrito pelo v86; algumas imagens não inicializam. No Galaxy A15, comece com 256 MB de memória virtual; desempenho e compatibilidade do XP são experimentais.
+Ative **Configurações → Menu de desenvolvedor → Modo de desenvolvedor → Abrir PC virtual**. Escolha uma ISO inicializável sua do Windows XP para instalar sem precisar procurar um `.img`; o app cria um disco virtual local de 2 GB. Quando aparecer a primeira tela azul do Setup, pressione **F5** e escolha **Standard PC**. Também é possível escolher um disco RAW já instalado (`.img`, `.hdd` ou `.bin`). Toque em **Parar e salvar** para guardar a sessão neste aparelho; para retomá-la, selecione a mesma ISO e a mesma memória. É necessário espaço local para o disco virtual e para o estado salvo (que inclui memória e alterações do disco). O app não fornece Windows nem licença. Algumas imagens não inicializam; veja os requisitos do v86. No Galaxy A15, comece com 256 MB de memória virtual; desempenho e compatibilidade do XP são experimentais.
 
 PS2 e PS Vita ainda dependem das soluções externas exibidas no catálogo. Xbox e Xbox 360 continuam sem núcleo integrado neste app. O menu de desenvolvedor mostra esses estados para não confundir atalho com emulação local.
 

@@ -77,7 +77,7 @@ const SYSTEMS = {
   amstradcpc: { name: 'Amstrad CPC', core: 'cap32', keyboard: true, extensions: ['dsk','sna','cdt','cpr','voc','zip','7z'] },
   doom: { name: 'Doom (PrBoom)', core: 'prboom', keyboard: true, extensions: ['wad','zip','7z'] },
 };
-const CURRENT_VERSION = '5.1.1';
+const CURRENT_VERSION = '5.1.2';
 const SYSTEM_KEY = 'sixteenbit-system-v1';
 
 const DB_NAME = 'sixbit-local-library';
@@ -1370,8 +1370,6 @@ async function refreshDeveloperPanel() {
 }
 
 let windowsVm = null;
-let windowsVmDiskUrl = '';
-let windowsVmCdUrl = '';
 let windowsVmReady = false;
 let windowsVmSessionKey = '';
 let windowsVmSessionMeta = null;
@@ -1520,10 +1518,6 @@ async function stopWindowsVm() {
     }
     try { await vm.destroy(); } catch { /* Cleanup continues for the selected file handles. */ }
   }
-  if (windowsVmDiskUrl) URL.revokeObjectURL(windowsVmDiskUrl);
-  if (windowsVmCdUrl) URL.revokeObjectURL(windowsVmCdUrl);
-  windowsVmDiskUrl = '';
-  windowsVmCdUrl = '';
   windowsVmSessionKey = '';
   windowsVmSessionMeta = null;
   updateWindowsVmButtons('stopped');
@@ -1590,8 +1584,6 @@ async function startWindowsVm() {
   screenCanvas.width = 0;
   screenCanvas.height = 0;
   screenCanvas.style.display = 'none';
-  windowsVmDiskUrl = URL.createObjectURL(disk);
-  if (cd) windowsVmCdUrl = URL.createObjectURL(cd);
   updateWindowsVmButtons('loading');
   const canResumeSession = !selectedDisk && cd && windowsVmSessionMatches(sessionRecord, cd, memorySize);
   setWindowsVmStatus(canResumeSession ? 'Carregando a sessão salva do XP…' : 'Carregando runtime local e arquivos selecionados…');
@@ -1599,10 +1591,6 @@ async function startWindowsVm() {
   try {
     const { V86 } = await import(new URL('v86/build/libv86.mjs', APP_BASE_URL).href);
     if (!windowsVmDialog.open) {
-      if (windowsVmDiskUrl) URL.revokeObjectURL(windowsVmDiskUrl);
-      if (windowsVmCdUrl) URL.revokeObjectURL(windowsVmCdUrl);
-      windowsVmDiskUrl = '';
-      windowsVmCdUrl = '';
       windowsVmSessionKey = '';
       windowsVmSessionMeta = null;
       updateWindowsVmButtons('stopped');
@@ -1615,13 +1603,13 @@ async function startWindowsVm() {
       screen_container: windowsVmScreen,
       bios: { url: new URL('v86/bios/seabios.bin', APP_BASE_URL).href },
       vga_bios: { url: new URL('v86/bios/vgabios.bin', APP_BASE_URL).href },
-      hda: { url: windowsVmDiskUrl, async: true, size: disk.size },
+      hda: { buffer: disk, async: true },
       boot_order: 0x213,
       acpi: false,
       cpuid_level: 2,
       autostart: false,
     };
-    if (cd && windowsVmCdUrl) options.cdrom = { url: windowsVmCdUrl, async: true, size: cd.size };
+    if (cd) options.cdrom = { buffer: cd, async: true };
     const vm = new V86(options);
     windowsVm = vm;
     vm.add_listener('download-progress', (event) => {
@@ -1653,7 +1641,7 @@ async function startWindowsVm() {
         await vm.run();
         updateWindowsVmButtons('running');
         if (sessionRestored) setWindowsVmStatus('Sessão do XP retomada. Use Parar para salvar antes de sair.');
-        else if (!selectedDisk && cd) setWindowsVmStatus('PC ligado pela ISO. Instale o XP no disco C:; use Parar para salvar e continuar depois.');
+        else if (!selectedDisk && cd) setWindowsVmStatus('Setup pela ISO: na primeira tela azul, toque F5 e escolha Standard PC. A tecla F5 está abaixo.');
         else setWindowsVmStatus('PC virtual ligado. Toque na tela ou use as teclas rápidas abaixo.');
       } catch (error) {
         recentAppErrors.push(`Windows XP VM: ${error?.message || error}`);
