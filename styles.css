@@ -487,3 +487,6 @@ html:fullscreen .player-footer, html:-webkit-full-screen .player-footer { flex-b
 .vm-text-form button { min-height: 34px; padding: 0 10px; font-size: 8px; }
 @media (max-width: 560px) { .description-cards { grid-template-columns: 1fr; } .description-card p { font-size: 8px; } .developer-grid { max-height: 30vh; } .developer-actions { justify-content: stretch; } .developer-actions button { flex: 1; } }
 @media (max-width: 560px) { .developer-vm-card { align-items: stretch; flex-direction: column; } .developer-vm-card button { width: 100%; } .compatibility-list { grid-template-columns: 1fr; } .vm-file-row { align-items: flex-start; flex-direction: column; } .vm-file-row input { max-width: 100%; } .vm-actions button { flex-basis: calc(50% - 6px); } }
+html.reduce-motion *, html.reduce-motion *::before, html.reduce-motion *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; scroll-behavior: auto !important; transition-duration: .01ms !important; }
+.library-tools select { max-width: 155px; }
+@media (max-width: 680px) { .library-tools { flex-wrap: wrap; } .library-tools .search-box { flex: 1 1 100%; } .library-tools select { flex: 1 1 0; max-width: none; } }

@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <meta name="theme-color" content="#0b0c11">
     <meta name="description" content="Sua coleção de jogos retrô em um emulador para computador e celular.">
-    <title>16-Bit Arcade — Ultimate Update v5.1.3</title>
+    <title>16-Bit Arcade — Ultimate Update v5.2.0</title>
     <link rel="icon" href="./icon.svg" type="image/svg+xml">
     <link rel="manifest" href="./manifest.webmanifest">
     <link rel="stylesheet" href="./styles.css">
@@ -31,7 +31,7 @@
       <main id="inicio">
         <section class="hero">
           <div class="hero-copy">
-            <p class="eyebrow"><span class="eyebrow-dot"></span> ARCADE MULTI-SISTEMA · ULTIMATE UPDATE · V5.1.3</p>
+            <p class="eyebrow"><span class="eyebrow-dot"></span> ARCADE MULTI-SISTEMA · ARCADE BOOST · V5.2.0</p>
             <h1>Os clássicos<br>voltaram <em>pra casa.</em></h1>
             <p class="hero-text">Sua coleção retrô num só lugar. Escolha o sistema, adicione seus jogos e aperte start.</p>
             <div class="system-select-label"><span>SISTEMA</span><button class="system-picker-trigger" id="system-picker-open" type="button" aria-haspopup="dialog" aria-controls="system-picker-dialog"><span id="system-picker-current">Sega Mega Drive</span><span aria-hidden="true">⌄</span></button><select id="system-select" class="system-select-native" aria-label="Sistema selecionado" tabindex="-1" aria-hidden="true"></select></div>
@@ -75,6 +75,7 @@
             </div>
             <div class="library-tools">
               <label class="search-box"><span aria-hidden="true">⌕</span><input id="library-search" type="search" placeholder="Buscar jogo..." autocomplete="off"></label>
+              <label class="sort-box"><span class="sr-only">Filtrar por sistema</span><select id="library-system-filter"><option value="all">Todos os sistemas</option></select></label>
               <label class="sort-box"><span class="sr-only">Ordenar biblioteca</span><select id="library-sort"><option value="recent">Recentes</option><option value="name">Nome A–Z</option><option value="played">Mais jogados</option></select></label>
             </div>
           </div>
@@ -140,6 +141,8 @@
         <label class="setting-row" for="setting-theme"><span><strong>Cor do arcade</strong><small>Escolha a cor que ilumina a interface</small></span><select id="setting-theme"><option value="lime">Verde retrô</option><option value="violet">Roxo arcade</option><option value="blue">Azul neon</option></select></label>
         <label class="setting-row" for="setting-aspect"><span><strong>Formato da tela</strong><small>Escolha o espaço usado pelo jogo</small></span><select id="setting-aspect"><option value="classic">Clássico · 4:3</option><option value="wide">Amplo · 16:9</option></select></label>
         <label class="setting-row" for="setting-filter"><span><strong>Efeito de tela</strong><small>Linhas CRT suaves de TV antiga</small></span><select id="setting-filter"><option value="off">Desativado</option><option value="crt">Linhas CRT</option></select></label>
+        <label class="setting-row" for="setting-performance"><span><strong>Perfil de desempenho</strong><small>Escolha fluidez ou economia de bateria</small></span><select id="setting-performance"><option value="balanced">Equilibrado</option><option value="quality">Qualidade máxima</option><option value="battery">Economia de bateria</option></select></label>
+        <label class="setting-row" for="setting-reduced-motion"><span><strong>Reduzir animações</strong><small>Ajuda em aparelhos mais lentos</small></span><input id="setting-reduced-motion" type="checkbox" class="switch-input"></label>
         <label class="setting-row" for="setting-controls"><span><strong>Controles na tela</strong><small>Botões virtuais do sistema selecionado</small></span><input id="setting-controls" type="checkbox" class="switch-input"></label>
         <label class="setting-row" for="setting-layout"><span><strong>Controle virtual</strong><small>Botões e formatos adaptados ao sistema</small></span><select id="setting-layout"><option value="three">Compacto · 2 ou 3 ações</option><option value="six">Expandido · até 6 ações</option></select></label><label class="setting-row" for="setting-pad-style"><span><strong>Direcional na tela</strong><small>Escolha entre cruz digital ou joystick analógico</small></span><select id="setting-pad-style"><option value="dpad">Cruz digital</option><option value="analog">Joystick analógico</option></select></label>
         <label class="setting-range-row" for="setting-pad-scale"><span><strong>Tamanho dos botões</strong><output id="pad-scale-value">100%</output></span><input id="setting-pad-scale" type="range" min="75" max="130" step="5" value="100"><small>Ajusta o direcional e os botões de ação</small></label>

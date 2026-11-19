@@ -77,7 +77,7 @@ const SYSTEMS = {
   amstradcpc: { name: 'Amstrad CPC', core: 'cap32', keyboard: true, extensions: ['dsk','sna','cdt','cpr','voc','zip','7z'] },
   doom: { name: 'Doom (PrBoom)', core: 'prboom', keyboard: true, extensions: ['wad','zip','7z'] },
 };
-const CURRENT_VERSION = '5.1.3';
+const CURRENT_VERSION = '5.2.0';
 const SYSTEM_KEY = 'sixteenbit-system-v1';
 
 const DB_NAME = 'sixbit-local-library';
@@ -100,6 +100,8 @@ const DEFAULT_SETTINGS = {
   haptics: true,
   keepAwake: true,
   startupSound: true,
+  performance: 'balanced',
+  reducedMotion: false,
   devMode: false,
 };
 const COVER_BACKGROUNDS = [
@@ -612,16 +614,26 @@ async function renderLibrary() {
   games.sort((a, b) => (b.lastPlayed || b.addedAt) - (a.lastPlayed || a.addedAt));
 
   const query = document.querySelector('#library-search').value.trim().toLocaleLowerCase();
+  const requestedSystemFilter = document.querySelector('#library-system-filter').value;
   const favorites = games.filter((game) => game.favorite).length;
   document.querySelector('#library-count').textContent = String(games.length);
   document.querySelector('#favorite-count').textContent = String(favorites);
   document.querySelector('#all-count').textContent = String(games.length);
   document.querySelector('#filter-favorite-count').textContent = String(favorites);
+  const systemFilterElement = document.querySelector('#library-system-filter');
+  const knownSystems = [...new Set(games.map((game) => game.systemId || 'megadrive'))]
+    .filter((id) => SYSTEMS[id]).sort((a, b) => SYSTEMS[a].name.localeCompare(SYSTEMS[b].name, 'pt-BR'));
+  const previousFilter = systemFilterElement.value;
+  systemFilterElement.replaceChildren(new Option('Todos os sistemas', 'all'));
+  for (const id of knownSystems) systemFilterElement.append(new Option(SYSTEMS[id].name, id));
+  systemFilterElement.value = knownSystems.includes(previousFilter) ? previousFilter : 'all';
+  const systemFilter = knownSystems.includes(requestedSystemFilter) ? requestedSystemFilter : 'all';
   const mostRecent = games.find((game) => game.lastPlayed);
   document.querySelector('#recent-game-label').textContent = mostRecent ? displayTitle(mostRecent.name) : '—';
 
   let shown = games.filter((game) => {
-    const matchesFilter = libraryFilter !== 'favorites' || game.favorite;
+    const matchesFilter = (libraryFilter !== 'favorites' || game.favorite)
+      && (systemFilter === 'all' || (game.systemId || 'megadrive') === systemFilter);
     const matchesQuery = displayTitle(game.name).toLocaleLowerCase().includes(query)
       || game.format.toLocaleLowerCase().includes(query);
     return matchesFilter && matchesQuery;
@@ -720,6 +732,8 @@ function makeGameCard(game) {
 
 function applyLiveSettings() {
   document.documentElement.dataset.theme = settings.theme;
+  document.documentElement.dataset.performance = settings.performance;
+  document.documentElement.classList.toggle('reduce-motion', settings.reducedMotion);
   playerScreen.classList.toggle('is-wide', settings.aspect === 'wide');
   playerScreen.classList.toggle('has-crt', settings.filter === 'crt');
 }
@@ -728,6 +742,8 @@ function populateSettingsForm() {
   document.querySelector('#setting-theme').value = settings.theme;
   document.querySelector('#setting-aspect').value = settings.aspect;
   document.querySelector('#setting-filter').value = settings.filter;
+  document.querySelector('#setting-performance').value = settings.performance;
+  document.querySelector('#setting-reduced-motion').checked = settings.reducedMotion;
   document.querySelector('#setting-controls').checked = settings.touchControls;
   document.querySelector('#setting-layout').value = settings.layout;
   document.querySelector('#setting-pad-style').value = settings.padStyle;
@@ -748,6 +764,8 @@ function getSettingsFromForm() {
     theme: document.querySelector('#setting-theme').value,
     aspect: document.querySelector('#setting-aspect').value,
     filter: document.querySelector('#setting-filter').value,
+    performance: document.querySelector('#setting-performance').value,
+    reducedMotion: document.querySelector('#setting-reduced-motion').checked,
     touchControls: document.querySelector('#setting-controls').checked,
     layout: document.querySelector('#setting-layout').value,
     padStyle: document.querySelector('#setting-pad-style').value,
@@ -1048,6 +1066,11 @@ async function launchGame(file, record = null, soundAlreadyPlayed = false, selec
   const padOpacity = Math.min(100, Math.max(35, Number(settings.padOpacity) || 78)) / 100;
   const padScale = Math.min(130, Math.max(75, Number(settings.padScale) || 100)) / 100;
   const touchControlsCss = settings.touchControls ? '' : '.ejs_virtualGamepad_parent,.ejs_virtualGamepad_open{display:none!important}';
+  const performanceCss = settings.performance === 'quality'
+    ? '#game canvas{image-rendering:auto!important}'
+    : settings.performance === 'battery'
+      ? '#game canvas{image-rendering:pixelated!important;filter:saturate(.9)}'
+      : '#game canvas{image-rendering:auto!important}';
 
   playerView.hidden = false;
   document.body.classList.add('is-playing');
@@ -1076,6 +1099,7 @@ async function launchGame(file, record = null, soundAlreadyPlayed = false, selec
       .ejs_virtualGamepad_left,.ejs_virtualGamepad_top{opacity:${padOpacity}!important;zoom:${padScale}!important}
       .ejs_virtualGamepad_right{opacity:${padOpacity}!important}
       .ejs_dpad_main{opacity:1!important}
+      ${performanceCss}
       [id^="sixbit-select"],[id^="sixbit-start"]{background:linear-gradient(#e7e9ef,#777b88)!important;border:1px solid #2a2c35!important;border-radius:8px!important;color:#171811!important}
       ${touchControlsCss}
     </style></head>
@@ -1988,6 +2012,7 @@ window.addEventListener('pagehide', () => { void stopWindowsVm(); });
 document.querySelector('#bios-only-help').addEventListener('click', showBiosOnlyExplanation);
 fullscreenButton.addEventListener('click', toggleFullscreen);
 document.querySelector('#library-search').addEventListener('input', renderLibrary);
+document.querySelector('#library-system-filter').addEventListener('change', renderLibrary);
 document.querySelector('#library-sort').addEventListener('change', renderLibrary);
 document.querySelectorAll('[data-library-filter]').forEach((button) => {
   button.addEventListener('click', () => {
@@ -2015,6 +2040,7 @@ settingsForm.addEventListener('submit', (event) => {
     || settings.padStyle !== previous.padStyle
     || settings.padOpacity !== previous.padOpacity
     || settings.padScale !== previous.padScale
+    || settings.performance !== previous.performance
     || settings.volume !== previous.volume
     || settings.devMode !== previous.devMode;
   showToast(restartNeeded
@@ -2024,6 +2050,22 @@ settingsForm.addEventListener('submit', (event) => {
     wakeLock?.release?.();
     wakeLock = null;
   } else if (gameRunning) requestWakeLock();
+});
+
+document.addEventListener('keydown', (event) => {
+  const target = event.target;
+  const editing = target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement || target instanceof HTMLSelectElement;
+  if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'o' && !editing) {
+    event.preventDefault();
+    if (!playerView.hidden) return;
+    chooseButton.click();
+  } else if (event.key === '/' && !editing && playerView.hidden) {
+    event.preventDefault();
+    document.querySelector('#library-search').focus();
+  } else if (event.key === 'F11') {
+    event.preventDefault();
+    toggleFullscreen();
+  }
 });
 settingsDialog.addEventListener('close', () => showPlayerChrome(true));
 volumeInput.addEventListener('input', () => {
