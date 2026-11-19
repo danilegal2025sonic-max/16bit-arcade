@@ -17,8 +17,8 @@
     "ios:sync": "npm run build && node scripts/create-ios-icon.mjs && cap sync ios",
     "ios:open": "cap open ios",
     "desktop:dev": "npm run build && electron desktop/main.cjs",
-    "desktop:windows": "npm run build && electron-builder --win nsis --x64 --publish never",
-    "desktop:linux": "npm run build && electron-builder --linux AppImage deb --x64 --publish never"
+    "desktop:windows": "npm run build && electron-builder --publish never --win nsis --x64",
+    "desktop:linux": "npm run build && electron-builder --publish never --linux AppImage deb --x64"
   },
   "devDependencies": {
     "@capacitor/android": "6.2.2",
@@ -65,7 +65,6 @@
     },
     "linux": {
       "icon": "icon-512.png",
-      "desktopName": "com.codex.sixteenbit",
       "category": "Game",
       "target": [
         "AppImage",
