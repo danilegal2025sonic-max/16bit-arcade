@@ -1,6 +1,6 @@
 # 16-Bit Arcade
 
-Emulador retrô para navegador, computador e Android. A **Ultimate Update 5.2.0** adiciona arrastar e soltar ROMs, filtro de biblioteca por sistema, atalhos globais, perfis de desempenho e redução de animações. Também mantém o diagnóstico de boot do PC virtual, a identidade visual por sistema, controles de toque configuráveis e carregamento local com recuperação de núcleo pelo service worker. ROMs, BIOS, firmware e imagens do Windows continuam sendo escolhidos pelo usuário.
+Emulador retrô para navegador, computador, Android e iOS. A **Primeiro Port 5.3.0** prepara instaladores desktop para Windows e Linux via Electron e adiciona o projeto nativo iOS via Capacitor. Também inclui filtro de biblioteca por sistema, atalhos globais, perfis de desempenho, redução de animações e diagnóstico do PC virtual. ROMs, BIOS, firmware e imagens do Windows continuam sendo escolhidos pelo usuário.
 
 ## Publicar no GitHub Pages
 
@@ -32,6 +32,17 @@ O APK, `node_modules` e arquivos temporários de build ficam fora do repositóri
 - **5.1.2 — Compatibilidade do Setup** — lê os arquivos de disco direto do objeto local, evitando a rota de URL temporária; adiciona a tecla F5 e a instrução para selecionar **Standard PC** durante a instalação do XP.
 - **5.1.3 — Boot assistido do XP** — habilita o menu de boot da BIOS, adiciona F12 e setas aos controles rápidos, define 512 MB como memória inicial recomendada e mostra um aviso útil em vez de deixar a área de vídeo sem contexto; acrescenta monitoramento do sinal VGA, contadores de leitura/escrita do disco e cópia de diagnóstico sem nomes de arquivos.
 - **5.2.0 — Arcade Boost** — permite arrastar ROMs para a biblioteca ou para iniciar uma partida, filtra a coleção por sistema, adiciona `Ctrl/Cmd+O`, `/` e `F11`, cria perfis de desempenho e oferece redução de animações para aparelhos mais lentos.
+- **5.3.0 — Primeiro Port** — adiciona app Electron com esquema local seguro, instalador Windows x64 e pacotes Linux x64 AppImage/DEB; cria projeto iOS Capacitor com Swift Package Manager e workflow macOS para validar o app de simulador.
+
+## Windows e Linux
+
+Os instaladores x64 são produzidos pelo workflow `.github/workflows/native-builds.yml` em runners próprios de Windows e Linux quando a tag `v5.3.0` é enviada ao GitHub. O Windows recebe um instalador `.exe`; Linux recebe `.AppImage` e `.deb`. A primeira execução pode levar algum tempo para desempacotar os núcleos locais. Também é possível executar `npm run desktop:dev`, `npm run desktop:windows` ou `npm run desktop:linux` em um ambiente de desenvolvimento compatível.
+
+O app desktop carrega os arquivos locais por `arcade://app/`, sem iniciar um servidor `localhost`. Ele usa um processo Electron isolado, mantém a biblioteca no perfil do usuário e abre links externos aprovados no navegador padrão.
+
+## iOS
+
+O projeto Xcode está em `ios/App/App.xcodeproj` e usa Swift Package Manager. Em um Mac com Xcode, rode `npm ci`, `npm run ios:sync` e `npm run ios:open`; para instalar em um iPhone, selecione seu time de desenvolvimento no Xcode e assine o app. A sincronização gera o ícone 1024×1024 com a marca 16-Bit Arcade. O workflow do GitHub compila a variante de simulador para validar o port. Um IPA assinado para aparelho/App Store exige credenciais Apple, que não são armazenadas neste repositório. Até assinar a versão nativa, também é possível instalar a versão web no iPhone pelo Safari usando Compartilhar → Adicionar à Tela de Início. A WebView nativa do iOS não ativa isolamento cross-origin como o app desktop; por isso, núcleos que exigem `SharedArrayBuffer` e threads (como PSP e o PC virtual) podem não iniciar nessa versão.
 
 ## Sistemas integrados
 

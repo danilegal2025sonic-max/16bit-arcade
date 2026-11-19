@@ -77,7 +77,7 @@ const SYSTEMS = {
   amstradcpc: { name: 'Amstrad CPC', core: 'cap32', keyboard: true, extensions: ['dsk','sna','cdt','cpr','voc','zip','7z'] },
   doom: { name: 'Doom (PrBoom)', core: 'prboom', keyboard: true, extensions: ['wad','zip','7z'] },
 };
-const CURRENT_VERSION = '5.2.0';
+const CURRENT_VERSION = '5.3.0';
 const SYSTEM_KEY = 'sixteenbit-system-v1';
 
 const DB_NAME = 'sixbit-local-library';

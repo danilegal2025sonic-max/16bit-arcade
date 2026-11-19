@@ -1,0 +1,85 @@
+name: Desktop and iOS builds
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - 'v5.3.0'
+
+permissions:
+  contents: read
+
+jobs:
+  desktop:
+    name: ${{ matrix.label }}
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - label: Windows x64
+            runner: windows-latest
+            command: desktop:windows
+            artifact: windows-x64
+          - label: Linux x64
+            runner: ubuntu-24.04
+            command: desktop:linux
+            artifact: linux-x64
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run ${{ matrix.command }}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: 16bit-arcade-${{ matrix.artifact }}
+          path: release/*
+          if-no-files-found: error
+          retention-days: 14
+
+  ios:
+    name: iOS simulator build
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run ios:sync
+      - name: Build iOS simulator app
+        run: >-
+          xcodebuild
+          -project ios/App/App.xcodeproj
+          -scheme App
+          -sdk iphonesimulator
+          -configuration Release
+          -derivedDataPath build/ios-simulator
+          CODE_SIGNING_ALLOWED=NO
+
+  publish:
+    name: Publish Windows and Linux installers
+    if: startsWith(github.ref, 'refs/tags/')
+    needs: [desktop, ios]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: 16bit-arcade-*
+          path: release-assets
+          merge-multiple: true
+      - name: Create GitHub release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: >-
+          gh release create "$GITHUB_REF_NAME"
+          release-assets/*
+          --title "16-Bit Arcade $GITHUB_REF_NAME — Primeiro port"
+          --notes-file .github/release-notes-v5.3.0.md

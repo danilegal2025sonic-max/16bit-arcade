@@ -1,19 +1,70 @@
 {
   "name": "16bit-mega-drive",
-  "version": "5.2.0",
+  "version": "5.3.0",
+  "main": "desktop/main.cjs",
   "private": true,
-  "description": "Emulador multi-sistema retrô para web e Android",
+  "description": "Emulador multi-sistema retrô para Windows, Linux, iOS, Android e navegador",
   "scripts": {
     "build": "node scripts/copy-web.mjs",
     "cap:sync": "npm run build && cap sync android",
-    "android:apk": "npm run cap:sync && cd android && ./gradlew --no-daemon assembleDebug"
-  },
-  "dependencies": {
-    "@capacitor/android": "6.2.1",
-    "@capacitor/core": "6.2.1",
-    "v86": "0.5.473"
+    "android:apk": "npm run cap:sync && cd android && ./gradlew --no-daemon assembleDebug",
+    "ios:add": "npm run build && cap add ios --packagemanager SPM && node scripts/create-ios-icon.mjs",
+    "ios:sync": "npm run build && node scripts/create-ios-icon.mjs && cap sync ios",
+    "ios:open": "cap open ios",
+    "desktop:dev": "npm run build && electron desktop/main.cjs",
+    "desktop:windows": "npm run build && electron-builder --win nsis --x64",
+    "desktop:linux": "npm run build && electron-builder --linux AppImage deb --x64"
   },
   "devDependencies": {
-    "@capacitor/cli": "6.2.1"
+    "@capacitor/android": "6.2.3",
+    "@capacitor/cli": "6.2.3",
+    "@capacitor/core": "6.2.3",
+    "@capacitor/ios": "6.2.3",
+    "electron": "^45.4.1",
+    "electron-builder": "^26.18.0",
+    "pngjs": "^7.0.0",
+    "v86": "0.5.473"
+  },
+  "overrides": {
+    "tar": "^7.5.23"
+  },
+  "build": {
+    "appId": "com.codex.sixteenbit",
+    "productName": "16-Bit Arcade",
+    "asar": true,
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "desktop/**/*",
+      "package.json"
+    ],
+    "extraResources": [
+      {
+        "from": "www",
+        "to": "www"
+      }
+    ],
+    "artifactName": "16bit-arcade-${version}-${os}-${arch}.${ext}",
+    "win": {
+      "target": [
+        "nsis"
+      ],
+      "signAndEditExecutable": false
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true
+    },
+    "linux": {
+      "icon": "icon-512.png",
+      "category": "Game",
+      "target": [
+        "AppImage",
+        "deb"
+      ]
+    }
   }
 }
