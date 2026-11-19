@@ -21,10 +21,14 @@ jobs:
             runner: windows-latest
             command: desktop:windows
             artifact: windows-x64
+            paths: release/*.exe
           - label: Linux x64
             runner: ubuntu-24.04
             command: desktop:linux
             artifact: linux-x64
+            paths: |
+              release/*.AppImage
+              release/*.deb
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -36,7 +40,7 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: 16bit-arcade-${{ matrix.artifact }}
-          path: release/*
+          path: ${{ matrix.paths }}
           if-no-files-found: error
           retention-days: 14
 
@@ -75,11 +79,14 @@ jobs:
           pattern: 16bit-arcade-*
           path: release-assets
           merge-multiple: true
-      - name: Create GitHub release
+      - name: Publish GitHub release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: >-
-          gh release create "$GITHUB_REF_NAME"
-          release-assets/*
-          --title "16-Bit Arcade $GITHUB_REF_NAME — Primeiro port"
-          --notes-file .github/release-notes-v5.3.0.md
+        run: |
+          if gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1; then
+            gh release upload "$GITHUB_REF_NAME" release-assets/* --clobber
+          else
+            gh release create "$GITHUB_REF_NAME" release-assets/* \
+              --title "16-Bit Arcade $GITHUB_REF_NAME — Primeiro port" \
+              --notes-file .github/release-notes-v5.3.0.md
+          fi
