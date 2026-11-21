@@ -1,0 +1,75 @@
+name: Android APK release
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - 'android-v*'
+
+permissions:
+  contents: read
+
+jobs:
+  android:
+    name: Build Android APK
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: gradle
+      - run: npm ci
+      - name: Prepare persistent Android signing key when configured
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ARCADE_ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ARCADE_ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ARCADE_ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          if [[ -n "$ANDROID_KEYSTORE_BASE64" && -n "$ARCADE_ANDROID_KEYSTORE_PASSWORD" && -n "$ARCADE_ANDROID_KEY_ALIAS" && -n "$ARCADE_ANDROID_KEY_PASSWORD" ]]; then
+            printf '%s' "$ANDROID_KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/arcade-release.jks"
+            echo "ARCADE_ANDROID_KEYSTORE_PATH=$RUNNER_TEMP/arcade-release.jks" >> "$GITHUB_ENV"
+            echo "ARCADE_ANDROID_RELEASE_SIGNING=enabled" >> "$GITHUB_ENV"
+            echo "ARCADE_ANDROID_KEYSTORE_PASSWORD=$ARCADE_ANDROID_KEYSTORE_PASSWORD" >> "$GITHUB_ENV"
+            echo "ARCADE_ANDROID_KEY_ALIAS=$ARCADE_ANDROID_KEY_ALIAS" >> "$GITHUB_ENV"
+            echo "ARCADE_ANDROID_KEY_PASSWORD=$ARCADE_ANDROID_KEY_PASSWORD" >> "$GITHUB_ENV"
+          else
+            echo "ARCADE_ANDROID_RELEASE_SIGNING=disabled" >> "$GITHUB_ENV"
+          fi
+      - name: Build Android package
+        run: |
+          if [[ "$ARCADE_ANDROID_RELEASE_SIGNING" == "enabled" ]]; then
+            npm run android:release-apk
+            cp android/app/build/outputs/apk/release/app-release.apk 16bit-arcade-android.apk
+          else
+            npm run android:apk
+            cp android/app/build/outputs/apk/debug/app-debug.apk 16bit-arcade-android.apk
+          fi
+      - uses: actions/upload-artifact@v7
+        with:
+          name: 16bit-arcade-android
+          path: 16bit-arcade-android.apk
+          if-no-files-found: error
+          retention-days: 14
+      - name: Publish Android-only release
+        if: startsWith(github.ref, 'refs/tags/android-v')
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          VERSION="${GITHUB_REF_NAME#android-v}"
+          NOTES_FILE=".github/release-notes-v${VERSION}.md"
+          if gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1; then
+            gh release upload "$GITHUB_REF_NAME" 16bit-arcade-android.apk --clobber
+          else
+            gh release create "$GITHUB_REF_NAME" 16bit-arcade-android.apk \
+              --title "16-Bit Arcade v${VERSION} para Android" \
+              --notes-file "$NOTES_FILE"
+          fi

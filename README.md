@@ -1,6 +1,6 @@
 # 16-Bit Arcade
 
-Emulador retrô para navegador, computador, Android e iOS. A **Grande Atualização 6.0.0** prepara builds de Windows, Linux, macOS Apple silicon e Intel, APK Android e projeto iOS via Capacitor. Também adiciona acesso opcional ao RetroArch Web Player oficial, além do catálogo local EmulatorJS. ROMs, BIOS, firmware e imagens do Windows continuam sendo escolhidos pelo usuário.
+Emulador retrô para navegador, computador, Android e iOS. A **Grande Atualização Android 6.1.0** renova a tela inicial, oferece oito temas, animações de abertura configuráveis, filtros visuais e opções de suavização para os jogos. ROMs, BIOS, firmware e imagens do Windows continuam sendo escolhidos pelo usuário.
 
 ## Publicar no GitHub Pages
 
@@ -34,10 +34,11 @@ O APK, `node_modules` e arquivos temporários de build ficam fora do repositóri
 - **5.2.0 — Arcade Boost** — permite arrastar ROMs para a biblioteca ou para iniciar uma partida, filtra a coleção por sistema, adiciona `Ctrl/Cmd+O`, `/` e `F11`, cria perfis de desempenho e oferece redução de animações para aparelhos mais lentos.
 - **5.3.0 — Primeiro Port** — adiciona app Electron com esquema local seguro, instalador Windows x64 e pacotes Linux x64 AppImage/DEB; cria projeto iOS Capacitor com Swift Package Manager e workflow macOS para validar o app de simulador.
 - **6.0.0 — Grande Atualização Multiplataforma** — atualiza a versão em Android, iOS, Windows e Linux; adiciona empacotamento macOS Intel e Apple silicon; gera APK Android no workflow de release; corrige a sincronização nativa do Capacitor com o pacote `tar` seguro; adiciona um atalho claro para o RetroArch Web Player oficial e documenta que esse catálogo externo é menor que todos os cores nativos do RetroArch.
+- **6.1.0 — Remaster Android** — atualiza o APK Android; refaz a apresentação da tela inicial; adiciona oito cores de interface, três estilos de animação inicial mais a opção de desligar, filtros CRT/scanline/fósforo RGB e opções de suavização dos pixels; trata configurações antigas ou armazenamento local bloqueado com mais segurança; inclui o acesso à prévia web do Azahar/3DS, identificada como externa porque o runtime estável 4.2.3 do APK não inclui esse core.
 
 ## Windows e Linux
 
-Os pacotes da versão atual são produzidos pelo workflow `.github/workflows/native-builds.yml` quando uma tag `v*` é enviada ao GitHub; no caso desta versão, `v6.0.0`. Windows recebe instalador x64 `.exe`; Linux recebe `.AppImage` e `.deb`; macOS recebe `.dmg` e `.zip` para Apple silicon e Intel. Os pacotes macOS são sem assinatura/notarização e podem exibir o aviso do Gatekeeper. A primeira execução pode levar algum tempo para desempacotar os núcleos locais. Também é possível executar `npm run desktop:dev`, `npm run desktop:windows`, `npm run desktop:linux`, `npm run desktop:mac:arm64` ou `npm run desktop:mac:x64` em um ambiente compatível.
+Os pacotes da versão multiplataforma 6.0.0 foram produzidos pelo workflow `.github/workflows/native-builds.yml`. A versão Android 6.1.0 usa a publicação Android-only em `.github/workflows/android-release.yml`, acionada pela tag `android-v6.1.0`; ela não dispara uma nova compilação de Windows, Linux, macOS ou iOS. Windows recebe instalador x64 `.exe`; Linux recebe `.AppImage` e `.deb`; macOS recebe `.dmg` e `.zip` para Apple silicon e Intel. Os pacotes macOS são sem assinatura/notarização e podem exibir o aviso do Gatekeeper. A primeira execução pode levar algum tempo para desempacotar os núcleos locais. Também é possível executar `npm run desktop:dev`, `npm run desktop:windows`, `npm run desktop:linux`, `npm run desktop:mac:arm64` ou `npm run desktop:mac:x64` em um ambiente compatível.
 
 O workflow compila um APK Android assinado para sideload usando uma chave persistente guardada nos segredos privados do GitHub Actions; isso permite instalar as versões futuras por cima desta sem trocar a chave. Se os segredos não estiverem configurados (por exemplo, em um fork), o workflow produz um APK de depuração. A assinatura de sideload não configura uma publicação da Play Store. O workflow também valida o app iOS no simulador; um IPA para iPhone continua exigindo assinatura da Apple.
 
@@ -50,7 +51,7 @@ O projeto Xcode está em `ios/App/App.xcodeproj` e usa Swift Package Manager. Em
 ## Sistemas integrados
 
 - **Sega:** Mega Drive/Genesis, Sega CD, 32X, Saturn, Master System, Game Gear, Dreamcast, SG-1000 e Sega Pico experimental.
-- **Nintendo:** NES/Famicom, SNES, Game Boy, Game Boy Color, Game Boy Advance, Nintendo DS e Nintendo 64.
+- **Nintendo:** NES/Famicom, SNES, Game Boy, Game Boy Color, Game Boy Advance, Nintendo DS e Nintendo 64. Nintendo 3DS aparece como prévia externa do Azahar; não está integrado ao runtime estável empacotado.
 - **PlayStation:** PS1 e PSP. PS2 e PS Vita são atalhos para soluções externas; não são núcleos integrados.
 - **Computadores:** Commodore 64, 128, PET, Plus/4, VIC-20 e Amiga; PC MS-DOS.
 - **Atari e retrô:** Atari 2600, 5200, 7800, 8-bit (400/800/XL/XE), Lynx e Jaguar; Virtual Boy; 3DO; ColecoVision; PC Engine/TurboGrafx-16, PC Engine CD e SuperGrafx; Neo Geo AES/MVS via FBNeo; Neo Geo Pocket; WonderSwan e NEC PC-FX.

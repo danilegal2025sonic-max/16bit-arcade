@@ -42,6 +42,7 @@ const SYSTEMS = {
   ps1: { name: 'PlayStation (PS1)', core: 'psx', biosKey: 'ps1', extensions: ['bin','cue','ccd','toc','m3u','chd','iso','img','sub','pbp','zip'] },
   ps2: { name: 'PlayStation 2', kind: 'external', externalUrl: PS2_PLAYER_URL, extensions: ['iso','chd','cso','zso','bin','img','zip'] },
   psvita: { name: 'PlayStation Vita', kind: 'external', externalUrl: PSVITA_PLAYER_URL, extensions: [] },
+  n3ds: { name: 'Nintendo 3DS · Azahar Preview', kind: 'external', externalUrl: 'https://demo.emulatorjs.org/', preview: true, extensions: [] },
   retroarchweb: { name: 'RetroArch Web Player', kind: 'external', externalUrl: RETROARCH_WEB_URL, extensions: [] },
   psp: { name: 'PlayStation Portable (PSP)', core: 'psp', threaded: true, extensions: ['iso','cso','pbp','zip'] },
   dreamcast: { name: 'Sega Dreamcast', core: 'flycast', customCore: true, biosKeys: ['dreamcast-boot','dreamcast-flash'], extensions: ['cdi','gdi','chd','cue','m3u','iso','elf','bin','zip'] },
@@ -79,7 +80,7 @@ const SYSTEMS = {
   amstradcpc: { name: 'Amstrad CPC', core: 'cap32', keyboard: true, extensions: ['dsk','sna','cdt','cpr','voc','zip','7z'] },
   doom: { name: 'Doom (PrBoom)', core: 'prboom', keyboard: true, extensions: ['wad','zip','7z'] },
 };
-const CURRENT_VERSION = '6.0.0';
+const CURRENT_VERSION = '6.1.0';
 const SYSTEM_KEY = 'sixteenbit-system-v1';
 
 const DB_NAME = 'sixbit-local-library';
@@ -93,6 +94,8 @@ const DEFAULT_SETTINGS = {
   theme: 'lime',
   aspect: 'classic',
   filter: 'off',
+  imageMode: 'smooth',
+  bootAnimation: 'arcade',
   touchControls: true,
   layout: 'three',
   padStyle: 'dpad',
@@ -117,7 +120,7 @@ const COVER_BACKGROUNDS = [
 
 const SYSTEM_GROUPS = {
   Sega: ['megadrive','segacd','32x','saturn','mastersystem','gamegear','dreamcast','sg1000','segapico'],
-  Nintendo: ['nes','snes','gb','gbc','gba','nds','n64'],
+  Nintendo: ['nes','snes','gb','gbc','gba','nds','n64','n3ds'],
   PlayStation: ['ps1','ps2','psp','psvita'],
   Atari: ['atari2600','atari5200','atari7800','jaguar','lynx','vb'],
   Computadores: ['c64','c128','pet','plus4','vic20','amiga','dos','atari8','zxspectrum','amstradcpc'],
@@ -151,6 +154,7 @@ const SYSTEM_SUMMARIES = {
   supergrafx:'Console NEC · núcleo Mednafen PCE', pcenginecd:'Console de CD · Mednafen PCE · BIOS', neogeo:'Arcade/console SNK · FinalBurn Neo',
   atari8:'Computador 8-bit · Atari 400/800', zxspectrum:'Computador doméstico · Fuse',
   amstradcpc:'Computador doméstico · Caprice32', doom:'FPS clássico · PrBoom · WAD',
+  n3ds:'Azahar está listado nas prévias do EmulatorJS 4.3; abre a demonstração web separada e exige aparelho potente.',
   retroarchweb:'Catálogo oficial de cores RetroArch · abre no navegador',
 };
 const SYSTEM_DESCRIPTIONS = {
@@ -172,6 +176,7 @@ const SYSTEM_DESCRIPTIONS = {
   ps2:'PlayStation 2. Este catálogo oferece um atalho para um player externo; o núcleo não está integrado ao APK.',
   psp:'PlayStation Portable, portátil da Sony com jogos em UMD e downloads. Jogos em disco podem exigir bastante memória e processamento.',
   psvita:'PlayStation Vita. O atalho abre a página do Vita3K, um aplicativo externo e independente deste emulador.',
+  n3ds:'Nintendo 3DS via Azahar, anunciado na documentação de prévia do EmulatorJS 4.3. O runtime estável 4.2.3 incluído neste APK não contém esse núcleo; esta opção abre a demonstração web oficial em outra página e pode exigir um aparelho mais potente.',
   atari2600:'Atari 2600, console doméstico pioneiro de cartuchos. Os jogos são pequenos e usam formatos como .a26.',
   atari5200:'Atari 5200, console doméstico de cartuchos da Atari. Alguns jogos precisam de configurações de controle específicas.',
   atari7800:'Atari 7800, console retrocompatível com parte da biblioteca do 2600. BIOS pode melhorar a compatibilidade.',
@@ -207,14 +212,35 @@ const SYSTEM_DESCRIPTIONS = {
 
 function readSettings() {
   try {
-    return { ...DEFAULT_SETTINGS, ...JSON.parse(localStorage.getItem(SETTINGS_KEY) || '{}') };
+    const stored = JSON.parse(localStorage.getItem(SETTINGS_KEY) || '{}');
+    const merged = { ...DEFAULT_SETTINGS, ...(stored && typeof stored === 'object' ? stored : {}) };
+    const choose = (value, values, fallback) => values.includes(value) ? value : fallback;
+    merged.theme = choose(merged.theme, ['lime','violet','blue','amber','rose','teal','orange','ice'], DEFAULT_SETTINGS.theme);
+    merged.aspect = choose(merged.aspect, ['classic','wide'], DEFAULT_SETTINGS.aspect);
+    merged.filter = choose(merged.filter, ['off','crt','scanlines','phosphor'], DEFAULT_SETTINGS.filter);
+    merged.imageMode = choose(merged.imageMode, ['smooth','pixel','crisp'], DEFAULT_SETTINGS.imageMode);
+    merged.bootAnimation = choose(merged.bootAnimation, ['arcade','scanline','pulse','off'], DEFAULT_SETTINGS.bootAnimation);
+    merged.performance = choose(merged.performance, ['balanced','quality','battery'], DEFAULT_SETTINGS.performance);
+    merged.layout = choose(merged.layout, ['three','six'], DEFAULT_SETTINGS.layout);
+    merged.padStyle = choose(merged.padStyle, ['dpad','analog'], DEFAULT_SETTINGS.padStyle);
+    for (const key of ['touchControls','haptics','keepAwake','startupSound','reducedMotion','devMode']) {
+      merged[key] = typeof merged[key] === 'boolean' ? merged[key] : DEFAULT_SETTINGS[key];
+    }
+    merged.padOpacity = Math.min(100, Math.max(35, Number(merged.padOpacity) || DEFAULT_SETTINGS.padOpacity));
+    merged.padScale = Math.min(130, Math.max(75, Number(merged.padScale) || DEFAULT_SETTINGS.padScale));
+    merged.volume = Math.min(100, Math.max(0, Number(merged.volume) || 0));
+    return merged;
   } catch {
     return { ...DEFAULT_SETTINGS };
   }
 }
 
 let settings = readSettings();
-let selectedSystem = localStorage.getItem(SYSTEM_KEY) in SYSTEMS ? localStorage.getItem(SYSTEM_KEY) : 'megadrive';
+let selectedSystem = 'megadrive';
+try {
+  const savedSystem = localStorage.getItem(SYSTEM_KEY);
+  if (savedSystem && Object.prototype.hasOwnProperty.call(SYSTEMS, savedSystem)) selectedSystem = savedSystem;
+} catch { /* A blocked browser store must not prevent the emulator from opening. */ }
 let currentBiosUrls = [];
 let currentSidecarUrls = [];
 let dbPromise;
@@ -736,16 +762,20 @@ function makeGameCard(game) {
 
 function applyLiveSettings() {
   document.documentElement.dataset.theme = settings.theme;
+  document.documentElement.dataset.bootAnimation = settings.bootAnimation;
   document.documentElement.dataset.performance = settings.performance;
   document.documentElement.classList.toggle('reduce-motion', settings.reducedMotion);
   playerScreen.classList.toggle('is-wide', settings.aspect === 'wide');
-  playerScreen.classList.toggle('has-crt', settings.filter === 'crt');
+  playerScreen.dataset.filter = settings.filter;
+  document.querySelector('meta[name="theme-color"]').content = getComputedStyle(document.documentElement).getPropertyValue('--bg').trim() || '#0b0c11';
 }
 
 function populateSettingsForm() {
   document.querySelector('#setting-theme').value = settings.theme;
   document.querySelector('#setting-aspect').value = settings.aspect;
   document.querySelector('#setting-filter').value = settings.filter;
+  document.querySelector('#setting-image-mode').value = settings.imageMode;
+  document.querySelector('#setting-boot-animation').value = settings.bootAnimation;
   document.querySelector('#setting-performance').value = settings.performance;
   document.querySelector('#setting-reduced-motion').checked = settings.reducedMotion;
   document.querySelector('#setting-controls').checked = settings.touchControls;
@@ -768,6 +798,8 @@ function getSettingsFromForm() {
     theme: document.querySelector('#setting-theme').value,
     aspect: document.querySelector('#setting-aspect').value,
     filter: document.querySelector('#setting-filter').value,
+    imageMode: document.querySelector('#setting-image-mode').value,
+    bootAnimation: document.querySelector('#setting-boot-animation').value,
     performance: document.querySelector('#setting-performance').value,
     reducedMotion: document.querySelector('#setting-reduced-motion').checked,
     touchControls: document.querySelector('#setting-controls').checked,
@@ -972,6 +1004,8 @@ function openSelectedExternalSystem() {
   openExternalPlayer(system.externalUrl);
   if (selectedSystem === 'psvita') {
     showToast('Vita3K é um app externo. O site oficial tem a versão para Android e computador.');
+  } else if (selectedSystem === 'n3ds') {
+    showToast('Nintendo 3DS abre a demonstração web do EmulatorJS; o núcleo Azahar ainda está em prévia e não vem neste APK.');
   } else if (selectedSystem === 'retroarchweb') {
     showToast('RetroArch Web abre fora do app. Escolha um core e carregue sua ROM no navegador.');
   } else {
@@ -1358,7 +1392,7 @@ function renderSystemDescriptions() {
     if (!cards.length) return '';
     return `<section class="description-group"><h3>${group}</h3><div class="description-cards">${cards.map((id) => {
       const system = SYSTEMS[id];
-      const mode = system.kind === 'external' ? 'Player externo' : (system.keyboard ? 'Núcleo integrado · teclado virtual' : `Núcleo integrado · ${system.core}`);
+      const mode = system.preview ? 'Prévia web · core experimental' : (system.kind === 'external' ? 'Player externo' : (system.keyboard ? 'Núcleo integrado · teclado virtual' : `Núcleo integrado · ${system.core}`));
       return `<article class="description-card"><div><h4>${system.name}</h4><span>${mode}</span></div><p>${SYSTEM_DESCRIPTIONS[id] || 'Sistema retrô disponível no catálogo.'}</p></article>`;
     }).join('')}</div></section>`;
   }).join('');
@@ -2049,10 +2083,11 @@ settingsForm.addEventListener('submit', (event) => {
     || settings.padOpacity !== previous.padOpacity
     || settings.padScale !== previous.padScale
     || settings.performance !== previous.performance
+    || settings.imageMode !== previous.imageMode
     || settings.volume !== previous.volume
     || settings.devMode !== previous.devMode;
   showToast(restartNeeded
-    ? 'Preferências salvas. Controles e modo de desenvolvedor atualizados.'
+    ? 'Preferências salvas. Algumas opções entram na próxima partida.'
     : 'Preferências salvas neste aparelho.');
   if (!settings.keepAwake) {
     wakeLock?.release?.();
@@ -2213,7 +2248,7 @@ function renderSystemPicker() {
   document.querySelector('#system-picker-count').textContent = `${entries.length} sistemas · ${Object.values(SYSTEMS).filter((system) => system.kind !== 'external').length} integrados`;
   pickerResults.innerHTML = entries.map(([id, system]) => {
     const external = system.kind === 'external';
-  const badge = external ? 'EXTERNO' : (system.experimental ? 'EXPERIMENTAL' : (system.keyboard ? 'TECLADO' : (system.threaded ? 'DESEMPENHO' : (system.biosKey || system.biosKeys ? 'BIOS' : 'INTEGRADO'))));
+  const badge = system.preview ? 'PRÉVIA WEB' : (external ? 'EXTERNO' : (system.experimental ? 'EXPERIMENTAL' : (system.keyboard ? 'TECLADO' : (system.threaded ? 'DESEMPENHO' : (system.biosKey || system.biosKeys ? 'BIOS' : 'INTEGRADO')))));
     return `<button type="button" class="picker-system${selectedSystem === id ? ' is-selected' : ''}" data-picker-system="${id}" aria-pressed="${selectedSystem === id}"><span class="picker-system-top"><span class="picker-system-icon" aria-hidden="true">${external ? '↗' : (system.core ? '▣' : '◈')}</span><span class="picker-badge${external ? ' is-external' : ''}">${badge}</span></span><strong>${system.name}</strong><small>${SYSTEM_SUMMARIES[id] || (external ? 'Abre uma solução externa' : 'Núcleo EmulatorJS')}</small></button>`;
   }).join('') || '<p class="picker-empty">Nenhum sistema encontrado. Tente outro nome.</p>';
 }
@@ -2232,7 +2267,7 @@ function updateSystemActions() {
   const externalSystem = SYSTEMS[selectedSystem]?.kind === 'external';
   virtualKeyboardToggle.hidden = !SYSTEMS[selectedSystem]?.keyboard;
   if (!SYSTEMS[selectedSystem]?.keyboard && keyboardOpen) setVirtualKeyboardOpen(false);
-  const actionName = selectedSystem === 'psvita' ? 'Obter Vita3K' : (selectedSystem === 'retroarchweb' ? 'Abrir RetroArch Web' : 'Abrir player de PS2');
+  const actionName = selectedSystem === 'psvita' ? 'Obter Vita3K' : (selectedSystem === 'n3ds' ? 'Abrir 3DS Preview' : (selectedSystem === 'retroarchweb' ? 'Abrir RetroArch Web' : 'Abrir player de PS2'));
   chooseButton.innerHTML = externalSystem ? `<span aria-hidden="true">↗</span> ${actionName}` : '<span aria-hidden="true">▶</span> Abrir uma ROM';
   libraryImportButton.disabled = externalSystem;
   libraryImportButton.title = externalSystem ? 'Este sistema abre em outro app ou página' : '';
