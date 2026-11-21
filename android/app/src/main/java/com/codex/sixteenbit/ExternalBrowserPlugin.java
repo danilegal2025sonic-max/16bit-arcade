@@ -17,7 +17,8 @@ import java.util.Set;
 public class ExternalBrowserPlugin extends Plugin {
     private static final Set<String> ALLOWED_HOSTS = new HashSet<>(Arrays.asList(
         "tabstationtoo.github.io",
-        "vita3k.org"
+        "vita3k.org",
+        "web.libretro.com"
     ));
 
     @PluginMethod

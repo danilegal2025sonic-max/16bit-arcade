@@ -1,10 +1,10 @@
-name: Desktop and iOS builds
+name: Android, desktop and iOS builds
 
 on:
   workflow_dispatch:
   push:
     tags:
-      - 'v5.3.0'
+      - 'v*'
 
 permissions:
   contents: read
@@ -44,9 +44,92 @@ jobs:
           if-no-files-found: error
           retention-days: 14
 
+  macos:
+    name: ${{ matrix.label }}
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - label: macOS Apple silicon
+            runner: macos-15
+            command: desktop:mac:arm64
+            artifact: macos-arm64
+          - label: macOS Intel
+            runner: macos-26-intel
+            command: desktop:mac:x64
+            artifact: macos-x64
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run ${{ matrix.command }}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: 16bit-arcade-${{ matrix.artifact }}
+          path: |
+            release/*.dmg
+            release/*.zip
+          if-no-files-found: error
+          retention-days: 14
+
+  android:
+    name: Android APK
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: gradle
+      - run: npm ci
+      - name: Prepare persistent Android signing key when configured
+        id: android-signing
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ARCADE_ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ARCADE_ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ARCADE_ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          if [[ -n "$ANDROID_KEYSTORE_BASE64" && -n "$ARCADE_ANDROID_KEYSTORE_PASSWORD" && -n "$ARCADE_ANDROID_KEY_ALIAS" && -n "$ARCADE_ANDROID_KEY_PASSWORD" ]]; then
+            printf '%s' "$ANDROID_KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/arcade-release.jks"
+            echo "ARCADE_ANDROID_KEYSTORE_PATH=$RUNNER_TEMP/arcade-release.jks" >> "$GITHUB_ENV"
+            echo "ARCADE_ANDROID_RELEASE_SIGNING=enabled" >> "$GITHUB_ENV"
+            echo "ARCADE_ANDROID_KEYSTORE_PASSWORD=$ARCADE_ANDROID_KEYSTORE_PASSWORD" >> "$GITHUB_ENV"
+            echo "ARCADE_ANDROID_KEY_ALIAS=$ARCADE_ANDROID_KEY_ALIAS" >> "$GITHUB_ENV"
+            echo "ARCADE_ANDROID_KEY_PASSWORD=$ARCADE_ANDROID_KEY_PASSWORD" >> "$GITHUB_ENV"
+          else
+            echo "ARCADE_ANDROID_RELEASE_SIGNING=disabled" >> "$GITHUB_ENV"
+          fi
+      - name: Build signed release APK or portable debug APK
+        run: |
+          if [[ "$ARCADE_ANDROID_RELEASE_SIGNING" == "enabled" ]]; then
+            npm run android:release-apk
+            mkdir -p android-artifact
+            cp android/app/build/outputs/apk/release/app-release.apk android-artifact/16bit-arcade-android.apk
+          else
+            npm run android:apk
+            mkdir -p android-artifact
+            cp android/app/build/outputs/apk/debug/app-debug.apk android-artifact/16bit-arcade-android.apk
+          fi
+      - uses: actions/upload-artifact@v4
+        with:
+          name: 16bit-arcade-android
+          path: android-artifact/*.apk
+          if-no-files-found: error
+          retention-days: 14
+
   ios:
     name: iOS simulator build
-    runs-on: macos-15-intel
+    runs-on: macos-15
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -66,9 +149,9 @@ jobs:
           CODE_SIGNING_ALLOWED=NO
 
   publish:
-    name: Publish Windows and Linux installers
-    if: startsWith(github.ref, 'refs/tags/')
-    needs: [desktop, ios]
+    name: Publish multiplatform release
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: [desktop, macos, android, ios]
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -79,14 +162,20 @@ jobs:
           pattern: 16bit-arcade-*
           path: release-assets
           merge-multiple: true
+      - name: Label Android APK
+        run: mv release-assets/16bit-arcade-android.apk "release-assets/16bit-arcade-${GITHUB_REF_NAME}-android.apk"
       - name: Publish GitHub release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          NOTES_FILE=".github/release-notes-${GITHUB_REF_NAME}.md"
+          if [[ ! -f "$NOTES_FILE" ]]; then
+            NOTES_FILE=".github/release-notes.md"
+          fi
           if gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1; then
             gh release upload "$GITHUB_REF_NAME" release-assets/* --clobber
           else
             gh release create "$GITHUB_REF_NAME" release-assets/* \
-              --title "16-Bit Arcade $GITHUB_REF_NAME — Primeiro port" \
-              --notes-file .github/release-notes-v5.3.0.md
+              --title "16-Bit Arcade $GITHUB_REF_NAME — Grande Atualização" \
+              --notes-file "$NOTES_FILE"
           fi

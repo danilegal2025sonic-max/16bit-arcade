@@ -1,6 +1,6 @@
 {
   "name": "16bit-mega-drive",
-  "version": "5.3.0",
+  "version": "6.0.0",
   "author": {
     "name": "16-Bit Arcade",
     "email": "257148480+danilegal2025-sonic-max@users.noreply.github.com"
@@ -8,17 +8,23 @@
   "homepage": "https://github.com/danilegal2025-sonic-max/16bit-arcade",
   "main": "desktop/main.cjs",
   "private": true,
-  "description": "Emulador multi-sistema retrô para Windows, Linux, iOS, Android e navegador",
+  "description": "Emulador multi-sistema retrô para Windows, Linux, macOS, iOS, Android e navegador",
   "scripts": {
+    "postinstall": "node scripts/patch-capacitor-tar.mjs",
     "build": "node scripts/copy-web.mjs",
     "cap:sync": "npm run build && cap sync android",
     "android:apk": "npm run cap:sync && cd android && ./gradlew --no-daemon assembleDebug",
+    "android:release-apk": "npm run cap:sync && cd android && ./gradlew --no-daemon assembleRelease",
     "ios:add": "npm run build && cap add ios --packagemanager SPM && node scripts/create-ios-icon.mjs",
     "ios:sync": "npm run build && node scripts/create-ios-icon.mjs && cap sync ios",
     "ios:open": "cap open ios",
     "desktop:dev": "npm run build && electron desktop/main.cjs",
     "desktop:windows": "npm run build && electron-builder --publish never --win nsis --x64",
-    "desktop:linux": "npm run build && electron-builder --publish never --linux AppImage deb --x64"
+    "desktop:linux": "npm run build && electron-builder --publish never --linux AppImage deb --x64",
+    "mac:icon": "node scripts/create-mac-icon.mjs",
+    "desktop:mac": "npm run mac:icon && npm run build && electron-builder --publish never --mac dmg zip",
+    "desktop:mac:arm64": "npm run mac:icon && npm run build && electron-builder --publish never --mac dmg zip --arm64",
+    "desktop:mac:x64": "npm run mac:icon && npm run build && electron-builder --publish never --mac dmg zip --x64"
   },
   "devDependencies": {
     "@capacitor/android": "6.2.2",
@@ -69,6 +75,15 @@
       "target": [
         "AppImage",
         "deb"
+      ]
+    },
+    "mac": {
+      "icon": "build/icon.icns",
+      "category": "public.app-category.games",
+      "identity": null,
+      "target": [
+        "dmg",
+        "zip"
       ]
     }
   }

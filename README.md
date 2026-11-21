@@ -1,6 +1,6 @@
 # 16-Bit Arcade
 
-Emulador retrô para navegador, computador, Android e iOS. A **Primeiro Port 5.3.0** prepara instaladores desktop para Windows e Linux via Electron e adiciona o projeto nativo iOS via Capacitor. Também inclui filtro de biblioteca por sistema, atalhos globais, perfis de desempenho, redução de animações e diagnóstico do PC virtual. ROMs, BIOS, firmware e imagens do Windows continuam sendo escolhidos pelo usuário.
+Emulador retrô para navegador, computador, Android e iOS. A **Grande Atualização 6.0.0** prepara builds de Windows, Linux, macOS Apple silicon e Intel, APK Android e projeto iOS via Capacitor. Também adiciona acesso opcional ao RetroArch Web Player oficial, além do catálogo local EmulatorJS. ROMs, BIOS, firmware e imagens do Windows continuam sendo escolhidos pelo usuário.
 
 ## Publicar no GitHub Pages
 
@@ -33,10 +33,13 @@ O APK, `node_modules` e arquivos temporários de build ficam fora do repositóri
 - **5.1.3 — Boot assistido do XP** — habilita o menu de boot da BIOS, adiciona F12 e setas aos controles rápidos, define 512 MB como memória inicial recomendada e mostra um aviso útil em vez de deixar a área de vídeo sem contexto; acrescenta monitoramento do sinal VGA, contadores de leitura/escrita do disco e cópia de diagnóstico sem nomes de arquivos.
 - **5.2.0 — Arcade Boost** — permite arrastar ROMs para a biblioteca ou para iniciar uma partida, filtra a coleção por sistema, adiciona `Ctrl/Cmd+O`, `/` e `F11`, cria perfis de desempenho e oferece redução de animações para aparelhos mais lentos.
 - **5.3.0 — Primeiro Port** — adiciona app Electron com esquema local seguro, instalador Windows x64 e pacotes Linux x64 AppImage/DEB; cria projeto iOS Capacitor com Swift Package Manager e workflow macOS para validar o app de simulador.
+- **6.0.0 — Grande Atualização Multiplataforma** — atualiza a versão em Android, iOS, Windows e Linux; adiciona empacotamento macOS Intel e Apple silicon; gera APK Android no workflow de release; corrige a sincronização nativa do Capacitor com o pacote `tar` seguro; adiciona um atalho claro para o RetroArch Web Player oficial e documenta que esse catálogo externo é menor que todos os cores nativos do RetroArch.
 
 ## Windows e Linux
 
-Os instaladores x64 são produzidos pelo workflow `.github/workflows/native-builds.yml` em runners próprios de Windows e Linux quando a tag `v5.3.0` é enviada ao GitHub. O Windows recebe um instalador `.exe`; Linux recebe `.AppImage` e `.deb`. A primeira execução pode levar algum tempo para desempacotar os núcleos locais. Também é possível executar `npm run desktop:dev`, `npm run desktop:windows` ou `npm run desktop:linux` em um ambiente de desenvolvimento compatível.
+Os pacotes da versão atual são produzidos pelo workflow `.github/workflows/native-builds.yml` quando uma tag `v*` é enviada ao GitHub; no caso desta versão, `v6.0.0`. Windows recebe instalador x64 `.exe`; Linux recebe `.AppImage` e `.deb`; macOS recebe `.dmg` e `.zip` para Apple silicon e Intel. Os pacotes macOS são sem assinatura/notarização e podem exibir o aviso do Gatekeeper. A primeira execução pode levar algum tempo para desempacotar os núcleos locais. Também é possível executar `npm run desktop:dev`, `npm run desktop:windows`, `npm run desktop:linux`, `npm run desktop:mac:arm64` ou `npm run desktop:mac:x64` em um ambiente compatível.
+
+O workflow compila um APK Android assinado para sideload usando uma chave persistente guardada nos segredos privados do GitHub Actions; isso permite instalar as versões futuras por cima desta sem trocar a chave. Se os segredos não estiverem configurados (por exemplo, em um fork), o workflow produz um APK de depuração. A assinatura de sideload não configura uma publicação da Play Store. O workflow também valida o app iOS no simulador; um IPA para iPhone continua exigindo assinatura da Apple.
 
 O app desktop carrega os arquivos locais por `arcade://app/`, sem iniciar um servidor `localhost`. Ele usa um processo Electron isolado, mantém a biblioteca no perfil do usuário e abre links externos aprovados no navegador padrão.
 
@@ -54,7 +57,9 @@ O projeto Xcode está em `ios/App/App.xcodeproj` e usa Swift Package Manager. Em
 - **Computadores adicionais:** Sinclair ZX Spectrum e Amstrad CPC. **PC MS-DOS** usa DOSBox Pure e abre pacotes de jogos `.zip` ou `.7z`.
 - **Arcade e Doom:** FBNeo e MAME 2003/2003 Plus; PrBoom para arquivos de jogo Doom `.wad`. Use versões de ROM compatíveis com o núcleo selecionado.
 
-O catálogo usa sistemas e núcleos do [EmulatorJS](https://emulatorjs.org/docs4devs/cores/) e alguns sistemas adicionais reconhecidos pelos mesmos núcleos. Runtime minificado, dados dos núcleos e relatórios usados pelo app são incluídos em `ejs-data/`; o service worker prioriza esses arquivos locais, armazena os recursos acessados e usa o CDN oficial fixado na versão 4.2.3 como recuperação se um arquivo não estiver disponível. As versões e hashes dos novos pacotes estão em `ejs-data/cores/core-packages-lock.json`. Durante uma partida, o menu do EmulatorJS permite selecionar núcleos alternativos quando o sistema oferece essa opção.
+O catálogo local usa sistemas e núcleos do [EmulatorJS](https://emulatorjs.org/docs4devs/cores/) e alguns sistemas adicionais reconhecidos pelos mesmos núcleos. Runtime minificado, dados dos núcleos e relatórios usados pelo app são incluídos em `ejs-data/`; o service worker prioriza esses arquivos locais, armazena os recursos acessados e usa o CDN oficial fixado na versão 4.2.3 como recuperação se um arquivo não estiver disponível. As versões e hashes dos novos pacotes estão em `ejs-data/cores/core-packages-lock.json`. Durante uma partida, o menu do EmulatorJS permite selecionar núcleos alternativos quando o sistema oferece essa opção.
+
+**RetroArch Web Player** aparece como uma opção externa no seletor. Ele abre `web.libretro.com`, onde o usuário escolhe um dos cores disponíveis naquele player e carrega a própria ROM. Esse subconjunto oficial para navegador não é o catálogo completo de cores do RetroArch para Android, iOS, Windows, Linux e macOS; esses cores nativos não são binários compatíveis com o runtime web deste app. A disponibilidade do player exige Internet e pode variar.
 
 ### Formatos e BIOS
 

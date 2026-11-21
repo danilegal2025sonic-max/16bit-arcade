@@ -26,6 +26,7 @@ const systemSelect = document.querySelector('#system-select');
 const systemPicker = document.querySelector('#system-picker-dialog');
 const PS2_PLAYER_URL = 'https://tabstationtoo.github.io/TabStationToo/';
 const PSVITA_PLAYER_URL = 'https://vita3k.org/download.html';
+const RETROARCH_WEB_URL = 'https://web.libretro.com/';
 const APP_BASE_URL = new URL('.', document.baseURI);
 const SYSTEMS = {
   megadrive: { name: 'Sega Mega Drive', core: 'segaMD', control: 'segaMD', extensions: ['md','gen','bin','smd','rom'] },
@@ -41,6 +42,7 @@ const SYSTEMS = {
   ps1: { name: 'PlayStation (PS1)', core: 'psx', biosKey: 'ps1', extensions: ['bin','cue','ccd','toc','m3u','chd','iso','img','sub','pbp','zip'] },
   ps2: { name: 'PlayStation 2', kind: 'external', externalUrl: PS2_PLAYER_URL, extensions: ['iso','chd','cso','zso','bin','img','zip'] },
   psvita: { name: 'PlayStation Vita', kind: 'external', externalUrl: PSVITA_PLAYER_URL, extensions: [] },
+  retroarchweb: { name: 'RetroArch Web Player', kind: 'external', externalUrl: RETROARCH_WEB_URL, extensions: [] },
   psp: { name: 'PlayStation Portable (PSP)', core: 'psp', threaded: true, extensions: ['iso','cso','pbp','zip'] },
   dreamcast: { name: 'Sega Dreamcast', core: 'flycast', customCore: true, biosKeys: ['dreamcast-boot','dreamcast-flash'], extensions: ['cdi','gdi','chd','cue','m3u','iso','elf','bin','zip'] },
   nes: { name: 'Nintendo NES / Famicom', core: 'nes', control: 'nes', extensions: ['nes','unf','unif','fds','zip'] },
@@ -77,7 +79,7 @@ const SYSTEMS = {
   amstradcpc: { name: 'Amstrad CPC', core: 'cap32', keyboard: true, extensions: ['dsk','sna','cdt','cpr','voc','zip','7z'] },
   doom: { name: 'Doom (PrBoom)', core: 'prboom', keyboard: true, extensions: ['wad','zip','7z'] },
 };
-const CURRENT_VERSION = '5.3.0';
+const CURRENT_VERSION = '6.0.0';
 const SYSTEM_KEY = 'sixteenbit-system-v1';
 
 const DB_NAME = 'sixbit-local-library';
@@ -121,7 +123,7 @@ const SYSTEM_GROUPS = {
   Computadores: ['c64','c128','pet','plus4','vic20','amiga','dos','atari8','zxspectrum','amstradcpc'],
   Arcade: ['arcade','mame2003'],
   'PC clássico': ['doom'],
-  Outros: ['3do','coleco','pce','supergrafx','pcenginecd','ngp','ws','pcfx','neogeo'],
+  Outros: ['3do','coleco','pce','supergrafx','pcenginecd','ngp','ws','pcfx','neogeo','retroarchweb'],
 };
 const SYSTEM_FAMILIES = Object.fromEntries(Object.entries(SYSTEM_GROUPS).flatMap(([family, ids]) => ids.map((id) => [id, family])));
 const FAMILY_SKINS = {
@@ -149,6 +151,7 @@ const SYSTEM_SUMMARIES = {
   supergrafx:'Console NEC · núcleo Mednafen PCE', pcenginecd:'Console de CD · Mednafen PCE · BIOS', neogeo:'Arcade/console SNK · FinalBurn Neo',
   atari8:'Computador 8-bit · Atari 400/800', zxspectrum:'Computador doméstico · Fuse',
   amstradcpc:'Computador doméstico · Caprice32', doom:'FPS clássico · PrBoom · WAD',
+  retroarchweb:'Catálogo oficial de cores RetroArch · abre no navegador',
 };
 const SYSTEM_DESCRIPTIONS = {
   megadrive:'Console de 16 bits da Sega, conhecido como Genesis na América do Norte. A biblioteca aceita cartuchos em formatos como .md e .gen.',
@@ -199,6 +202,7 @@ const SYSTEM_DESCRIPTIONS = {
   zxspectrum:'Computador doméstico da Sinclair, famoso por jogos em fita. Os jogos podem exigir teclado; use o teclado virtual nesta tela.',
   amstradcpc:'Computador doméstico da Amstrad, com jogos em fita, disco e cartucho. O teclado virtual ajuda em comandos e jogos de texto.',
   doom:'Núcleo PrBoom para jogos compatíveis com Doom. O pacote do jogo (WAD) deve ser fornecido por você; nenhum conteúdo comercial acompanha o app.',
+  retroarchweb:'Acesso ao RetroArch Web Player oficial. É uma plataforma separada, aberta no navegador; escolha um core e depois selecione sua ROM. O catálogo web é menor que o catálogo completo de cores nativas do RetroArch e depende de conexão.',
 };
 
 function readSettings() {
@@ -966,9 +970,13 @@ function openSelectedExternalSystem() {
   const system = SYSTEMS[selectedSystem];
   if (system?.kind !== 'external') return;
   openExternalPlayer(system.externalUrl);
-  showToast(selectedSystem === 'psvita'
-    ? 'Vita3K é um app externo. O site oficial tem a versão para Android e computador.'
-    : 'O player de PS2 abre em outra página; selecione o jogo e a BIOS por lá.');
+  if (selectedSystem === 'psvita') {
+    showToast('Vita3K é um app externo. O site oficial tem a versão para Android e computador.');
+  } else if (selectedSystem === 'retroarchweb') {
+    showToast('RetroArch Web abre fora do app. Escolha um core e carregue sua ROM no navegador.');
+  } else {
+    showToast('O player de PS2 abre em outra página; selecione o jogo e a BIOS por lá.');
+  }
 }
 
 async function launchGame(file, record = null, soundAlreadyPlayed = false, selectedSidecars = []) {
@@ -2224,7 +2232,7 @@ function updateSystemActions() {
   const externalSystem = SYSTEMS[selectedSystem]?.kind === 'external';
   virtualKeyboardToggle.hidden = !SYSTEMS[selectedSystem]?.keyboard;
   if (!SYSTEMS[selectedSystem]?.keyboard && keyboardOpen) setVirtualKeyboardOpen(false);
-  const actionName = selectedSystem === 'psvita' ? 'Obter Vita3K' : 'Abrir player de PS2';
+  const actionName = selectedSystem === 'psvita' ? 'Obter Vita3K' : (selectedSystem === 'retroarchweb' ? 'Abrir RetroArch Web' : 'Abrir player de PS2');
   chooseButton.innerHTML = externalSystem ? `<span aria-hidden="true">↗</span> ${actionName}` : '<span aria-hidden="true">▶</span> Abrir uma ROM';
   libraryImportButton.disabled = externalSystem;
   libraryImportButton.title = externalSystem ? 'Este sistema abre em outro app ou página' : '';

@@ -5,7 +5,7 @@ const { pathToFileURL } = require('node:url');
 
 const APP_SCHEME = 'arcade';
 const APP_HOST = 'app';
-const ALLOWED_EXTERNAL_HOSTS = new Set(['tabstationtoo.github.io', 'vita3k.org']);
+const ALLOWED_EXTERNAL_HOSTS = new Set(['tabstationtoo.github.io', 'vita3k.org', 'web.libretro.com']);
 
 protocol.registerSchemesAsPrivileged([{
   scheme: APP_SCHEME,
